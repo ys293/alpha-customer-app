@@ -47,6 +47,7 @@ export default function HomeScreen() {
   const [resultText, setResultText] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
+  const [isStopping, setIsStopping] = useState(false);
   const [hasPermission, setHasPermission] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   
@@ -102,20 +103,39 @@ export default function HomeScreen() {
 
   // 停止录音
   const stopRecording = async () => {
-    if (!recordingRef.current) return;
+    if (!recordingRef.current) {
+      // 防止重复停止
+      return;
+    }
+
+    const recordingToStop = recordingRef.current;
+    recordingRef.current = null; // 先置空，防止重复调用
 
     try {
-      await recordingRef.current.stopAndUnloadAsync();
-      const uri = recordingRef.current.getURI();
-      recordingRef.current = null;
+      setIsStopping(true);
+      await recordingToStop.stopAndUnloadAsync();
+      const uri = recordingToStop.getURI();
       setIsRecording(false);
+      setIsStopping(false);
 
       if (uri) {
         await handleRecordingComplete(uri);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('停止录音失败:', error);
       setIsRecording(false);
+      setIsStopping(false);
+      
+      // 检查是否是 " android.permission.RECORD_AUDIO" 相关错误
+      const errorMsg = error?.message || '';
+      if (errorMsg.includes('permission') || errorMsg.includes('permission')) {
+        Alert.alert('权限错误', '录音权限被拒绝，请在系统设置中开启麦克风权限');
+      } else if (errorMsg.includes('not recording') || errorMsg.includes('NotRecording')) {
+        // 录音已经停止，不需要处理
+        console.log('录音已经停止');
+      } else {
+        Alert.alert('错误', '停止录音失败，请重试');
+      }
     }
   };
 
@@ -403,23 +423,25 @@ export default function HomeScreen() {
               style={[
                 styles.actionButton,
                 isRecording && styles.actionButtonRecording,
+                isStopping && styles.actionButtonRecording,
               ]}
               onPressIn={startRecording}
               onPressOut={stopRecording}
-              disabled={isUploading || isProcessing}
+              disabled={isUploading || isProcessing || isStopping}
             >
               <Ionicons
-                name={isRecording ? 'mic' : 'mic-outline'}
+                name={isRecording || isStopping ? 'mic' : 'mic-outline'}
                 size={22}
-                color={isRecording ? '#FFFFFF' : COLORS.primary}
+                color={isRecording || isStopping ? '#FFFFFF' : COLORS.primary}
               />
               <Text
                 style={[
                   styles.actionButtonText,
                   isRecording && styles.actionButtonTextRecording,
+                  isStopping && styles.actionButtonTextRecording,
                 ]}
               >
-                {isRecording ? '录音中' : '语音输入'}
+                {isStopping ? '处理中...' : isRecording ? '录音中' : '语音输入'}
               </Text>
             </TouchableOpacity>
 
