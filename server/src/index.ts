@@ -66,30 +66,63 @@ app.post('/api/v1/upload', upload.single('file'), async (req, res) => {
   }
 });
 
-// 语音转文字接口（模拟）
-app.post('/api/v1/speech-to-text', upload.single('audio'), async (req, res) => {
-  try {
-    // 由于没有真实的ASR服务，这里返回提示信息
-    // 在实际生产环境中，可以接入阿里云、腾讯云等ASR服务
-    res.json({
-      text: '',
-      error: '语音识别服务暂不可用，请使用文字输入'
-    });
-  } catch (error) {
-    console.error('语音识别失败:', error);
-    res.status(500).json({ error: '语音识别失败' });
-  }
-});
+// 口腔行业专业术语列表（用于提示模型）
+const DENTAL_TERMS = `口腔行业专业术语参考：
+- 义齿：代替缺失天然牙的修复体
+- 全瓷冠：全部由瓷材料制成的牙冠
+- 金属烤瓷冠：内层金属、外层烤瓷的牙冠
+- 种植牙：通过种植体支持的修复牙
+- 二氧化锆：常用的全瓷材料
+- 密合度：修复体与牙体的贴合程度
+- 咬合：上下牙齿的接触关系
+- 边缘：修复体与牙体交接的边缘区域
+- 蜡型：蜡制成的牙齿形态模型
+- 包埋：用石膏等材料包埋蜡型
+- 打磨抛光：修复体表面的精加工处理
+- 排牙：排列人工牙
+- 充胶：用树脂材料填充
+- 车瓷：用牙科手机修整形态
+- 染色上釉：给义齿上色和增加光泽`;
 
 // AI润色接口 - SSE流式
 app.post('/api/v1/polish', async (req, res) => {
-  const { text, imageUrl } = req.body;
+  const { text, imageUrl, imageUrls, style } = req.body;
+  
+  // 兼容单图和多图
+  const imageUrlList: string[] = [];
+  if (imageUrl) imageUrlList.push(imageUrl);
+  if (imageUrls && Array.isArray(imageUrls)) {
+    imageUrlList.push(...imageUrls);
+  }
 
   // 设置SSE响应头
   res.setHeader('Content-Type', 'text/event-stream; charset=utf-8');
   res.setHeader('Cache-Control', 'no-cache, no-store, no-transform, must-revalidate');
   res.setHeader('Connection', 'keep-alive');
   res.setHeader('Access-Control-Allow-Origin', '*');
+
+  // 风格指令映射
+  const styleInstructions: Record<string, string> = {
+    professional: `回复风格要求：
+- 语言正式专业，使用书面语
+- 突出技术细节和质量保障
+- 适合发送给资深医生或重要客户
+- 示例用语："我们郑重承诺"、"严格按照标准流程"`,
+
+    friendly: `回复风格要求：
+- 语言亲切温暖，有情感温度
+- 多用"您"、"咱们"拉近距离
+- 适当使用表情符号以外的情感词汇
+- 示例用语："让您少跑一趟"、"咱们一起想办法"`,
+
+    brief: `回复风格要求：
+- 语言简洁精炼，直击重点
+- 删除所有不必要的客套话
+- 一句话能说清的不要用两句
+- 示例用语：直接说明情况和解决方案，不加"非常抱歉"`
+  };
+
+  const styleInstruction = styleInstructions[style] || styleInstructions.professional;
 
   // 构建系统提示词
   const systemPrompt = `你是口腔义齿加工中心的技术支持客服专员，负责协助客服人员润色回复客户（医生或诊所）的消息。
@@ -104,6 +137,8 @@ app.post('/api/v1/polish', async (req, res) => {
 - 礼貌、专业，体现对医生和患者的关怀
 - 维护公司利益，避免直接暴露对公司不利的真实原因（如设备故障、人员失误等），改用更委婉、客观的表述方式
 
+${styleInstruction}
+
 润色原则（关键！）：
 遇到需要解释延误、返工、质量问题等情况时，请用以下表达替换真实原因：
 | 真实原因 | 润色后的表述 |
@@ -114,27 +149,32 @@ app.post('/api/v1/polish', async (req, res) => {
 | 前面沟通漏单/问单拖延 | "因前序沟通中部分信息需要补充核对，导致流程稍有延迟" |
 | 物流运输损坏 | "运输途中偶有颠簸，我们已重新制作并安排加急发出" |
 
-回复格式要求：
-- 开头使用合适的称呼（如"张医生您好"、"尊敬的诊所老师好"）
-- 正文清晰说明情况 + 解决方案 + 新时间承诺（如有延迟）
-- 结尾致歉或感谢理解
-- 整体语气温和、不卑不亢
+回复格式要求（重要！简短为主）：
+- 总字数控制在100字以内
+- 称呼 + 一句话说明情况 + 解决方案即可
+- 不要过度道歉或重复感谢
+- 语言简洁专业，一气呵成
 
 输出要求：
-只输出润色后的完整回复文案，不输出分析过程。如果信息不足，先礼貌请求补充必要信息（如患者姓名）。`;
+只输出润色后的完整回复文案，不要任何解释说明。`;
 
   try {
     // 构建用户消息
     let userContent = '';
 
-    if (imageUrl) {
-      userContent = `【截图内容】：请分析这张截图中的客户问题信息\n\n`;
+    // 检查是否有图片（单图或多图）
+    const hasImages = imageUrlList.length > 0;
+    const hasText = text && text.trim();
+
+    if (hasImages) {
+      userContent = `【截图内容】：请分析这些截图中的客户问题信息，包括订单号、患者姓名、具体问题描述等\n\n`;
     }
 
-    if (text && text.trim()) {
+    if (hasText) {
       userContent += `【补充文字】：${text}\n\n`;
     }
 
+    // 如果既没有图片也没有文字，返回提示
     if (!userContent.trim()) {
       res.write(`data: ${JSON.stringify({ content: '请提供客户的问题描述或上传截图，我来帮您生成专业回复。' })}\n\n`);
       res.write('data: [DONE]\n\n');
@@ -142,23 +182,30 @@ app.post('/api/v1/polish', async (req, res) => {
       return;
     }
 
-    userContent += `请根据以上信息，生成一条专业、礼貌的客服回复。`;
+    // 根据是否有图片构建不同格式的用户消息
+    let messages: any[] = [];
 
-    // 构建消息数组
-    const messages: any[] = [
-      { role: 'system', content: systemPrompt },
-      { role: 'user', content: userContent }
-    ];
-
-    // 如果有图片URL，添加图片
-    if (imageUrl) {
-      messages[1] = {
-        role: 'user',
-        content: [
-          { type: 'text', text: userContent },
-          { type: 'image_url', image_url: { url: imageUrl, detail: 'high' } }
-        ]
-      };
+    if (imageUrlList.length > 0) {
+      // 有图片：使用多模态消息格式
+      const contentArray: any[] = [
+        { type: 'text', text: userContent }
+      ];
+      
+      imageUrlList.forEach(url => {
+        contentArray.push({ type: 'image_url', image_url: { url, detail: 'high' } });
+      });
+      
+      messages = [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: contentArray }
+      ];
+    } else {
+      // 无图片：使用纯文本格式
+      userContent += `请根据以上信息，生成一条专业、礼貌的客服回复。`;
+      messages = [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userContent }
+      ];
     }
 
     // 使用流式调用
@@ -183,6 +230,12 @@ app.post('/api/v1/polish', async (req, res) => {
     res.end();
   }
 });
+
+// 导入路由
+import recordsRouter from './routes/records';
+
+// 挂载路由
+app.use('/api/v1/records', recordsRouter);
 
 app.listen(port, () => {
   console.log(`Server listening at http://localhost:${port}/`);
