@@ -36,11 +36,12 @@ interface HistoryItem {
   timestamp: number;
 }
 
-// 润色风格类型（只保留亲切和简洁）
-type PolishStyle = 'friendly' | 'concise';
+// 润色风格类型
+type PolishStyle = 'gentle' | 'friendly' | 'concise';
 
-// 风格配置（只保留亲切和简洁）
+// 风格配置
 const POLISH_STYLES: { key: PolishStyle; label: string; icon: string; desc: string }[] = [
+  { key: 'gentle', label: '温和客气', icon: 'smile', desc: '礼貌温和' },
   { key: 'friendly', label: '亲切模式', icon: 'heart', desc: '温暖友好' },
   { key: 'concise', label: '简洁模式', icon: 'flash', desc: '简洁专业' },
 ];
@@ -127,7 +128,7 @@ export default function HomeScreen() {
   const [historyList, setHistoryList] = useState<HistoryItem[]>([]);
   const [expandedHistoryId, setExpandedHistoryId] = useState<string | null>(null);
   const [imagePreviewUri, setImagePreviewUri] = useState<string | null>(null);
-  const [selectedStyle, setSelectedStyle] = useState<PolishStyle>('friendly');
+  const [selectedStyle, setSelectedStyle] = useState<PolishStyle>('gentle');
   const [selectedCategory, setSelectedCategory] = useState('全部');
 
   const sseRef = useRef<RNSSE | null>(null);
