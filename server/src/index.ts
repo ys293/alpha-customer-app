@@ -103,11 +103,11 @@ app.post('/api/v1/polish', async (req, res) => {
 
   // 风格指令映射
   const styleInstructions: Record<string, string> = {
-    professional: `回复风格要求：
-- 语言正式专业，使用书面语
-- 突出技术细节和质量保障
-- 适合发送给资深医生或重要客户
-- 示例用语："我们郑重承诺"、"严格按照标准流程"`,
+    gentle: `回复风格要求：
+- 语言温和客气，礼貌周到
+- 多用"您好"、"麻烦您"、"辛苦啦"等礼貌用语
+- 表达委婉，尊重对方
+- 示例用语："您好，打扰您了"、"麻烦您抽空确认一下"、"辛苦您啦"`,
 
     friendly: `回复风格要求：
 - 语言亲切温暖，有情感温度
@@ -115,7 +115,7 @@ app.post('/api/v1/polish', async (req, res) => {
 - 适当使用表情符号以外的情感词汇
 - 示例用语："让您少跑一趟"、"咱们一起想办法"`,
 
-    brief: `回复风格要求：
+    concise: `回复风格要求：
 - 语言简洁精炼，直击重点
 - 删除所有不必要的客套话
 - 一句话能说清的不要用两句
@@ -228,6 +228,62 @@ ${styleInstruction}
     res.write(`data: ${JSON.stringify({ content: '处理失败，请重试。' })}\n\n`);
     res.write('data: [DONE]\n\n');
     res.end();
+  }
+});
+
+// 语音识别接口 - 使用豆包ASR
+app.post('/api/v1/transcribe', upload.single('file'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: '没有音频文件' });
+    }
+
+    const { buffer, mimetype } = req.file;
+
+    // 调用豆包语音识别
+    const audioBase64 = buffer.toString('base64');
+    const audioData = `data:${mimetype};base64,${audioBase64}`;
+
+    const messages: Array<{ role: 'system' | 'user' | 'assistant'; content: any }> = [
+      {
+        role: 'user',
+        content: [
+          {
+            type: 'audio',
+            audio: {
+              url: audioData
+            }
+          },
+          {
+            type: 'text',
+            text: '请识别这段语音的内容，直接输出识别出的文字，不要任何解释。如果音频中没有人声或无法识别，请输出"未能识别到语音内容"。'
+          }
+        ]
+      }
+    ];
+
+    // 使用非流式调用
+    let transcription = '';
+    const stream = llmClient.stream(messages as any, {
+      model: 'doubao-seed-2-0-pro-260215',
+    });
+
+    for await (const chunk of stream) {
+      if (chunk.content) {
+        transcription += chunk.content.toString();
+      }
+    }
+
+    // 如果识别结果提示无法识别，返回友好提示
+    if (transcription.includes('未能识别') || !transcription.trim()) {
+      return res.json({ text: '', error: '未能识别到语音内容' });
+    }
+
+    res.json({ text: transcription });
+
+  } catch (error) {
+    console.error('语音识别失败:', error);
+    res.status(500).json({ error: '语音识别失败' });
   }
 });
 

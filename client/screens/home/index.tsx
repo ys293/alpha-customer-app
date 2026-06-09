@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import {
   View,
   Text,
@@ -14,6 +14,7 @@ import {
   Modal,
   Share,
 } from 'react-native';
+import { Audio } from 'expo-av';
 import * as ImagePicker from 'expo-image-picker';
 import * as Clipboard from 'expo-clipboard';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -131,8 +132,15 @@ export default function HomeScreen() {
   const [selectedStyle, setSelectedStyle] = useState<PolishStyle>('gentle');
   const [selectedCategory, setSelectedCategory] = useState('全部');
 
+  // 语音录制状态
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordingDuration, setRecordingDuration] = useState(0);
+  const [transcribedText, setTranscribedText] = useState('');
+
   const sseRef = useRef<RNSSE | null>(null);
   const resultTextRef = useRef('');
+  const recordingRef = useRef<Audio.Recording | null>(null);
+  const recordingTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   // 获取所有分类
   const categories = ['全部', ...Array.from(new Set(TEMPLATE_LIBRARY.map(t => t.category)))];
@@ -266,6 +274,217 @@ export default function HomeScreen() {
   // 删除单张图片
   const removeImage = (uri: string) => {
     setImageUris(prev => prev.filter(u => u !== uri));
+  };
+
+  // 请求麦克风权限
+  const requestMicrophonePermission = async () => {
+    const { status } = await Audio.requestPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('需要权限', '请授权使用麦克风才能进行语音输入');
+      return false;
+    }
+    return true;
+  };
+
+  // 开始录音
+  const startRecording = async () => {
+    const hasPermission = await requestMicrophonePermission();
+    if (!hasPermission) return;
+
+    try {
+      // 配置音频模式
+      await Audio.setAudioModeAsync({
+        allowsRecordingIOS: true,
+        playsInSilentModeIOS: true,
+      });
+
+      // 创建录音
+      const { recording } = await Audio.Recording.createAsync(
+        Audio.RecordingOptionsPresets.HIGH_QUALITY
+      );
+      recordingRef.current = recording;
+      setIsRecording(true);
+      setRecordingDuration(0);
+
+      // 开始计时
+      recordingTimerRef.current = setInterval(() => {
+        setRecordingDuration(prev => prev + 1);
+      }, 1000);
+
+    } catch (error) {
+      console.error('开始录音失败:', error);
+      Alert.alert('错误', '无法开始录音，请重试');
+    }
+  };
+
+  // 停止录音并识别
+  const stopRecording = async () => {
+    if (!recordingRef.current) return;
+
+    try {
+      setIsRecording(false);
+
+      // 停止计时
+      if (recordingTimerRef.current) {
+        clearInterval(recordingTimerRef.current);
+        recordingTimerRef.current = null;
+      }
+
+      // 停止录音
+      await recordingRef.current.stopAndUnloadAsync();
+      const uri = recordingRef.current.getURI();
+      recordingRef.current = null;
+
+      // 重置音频模式
+      await Audio.setAudioModeAsync({
+        allowsRecordingIOS: false,
+      });
+
+      if (uri) {
+        await transcribeAndPolish(uri);
+      }
+
+    } catch (error) {
+      console.error('停止录音失败:', error);
+      Alert.alert('错误', '录音处理失败，请重试');
+    }
+  };
+
+  // 语音转文字并润色
+  const transcribeAndPolish = async (audioUri: string) => {
+    try {
+      setIsProcessing(true);
+      setTranscribedText('正在识别语音...');
+
+      // 上传音频文件到服务器进行语音识别
+      const formData = new FormData();
+      const fileName = `recording_${Date.now()}.m4a`;
+      formData.append('file', {
+        uri: audioUri,
+        name: fileName,
+        type: 'audio/m4a',
+      } as any);
+
+      // 上传图片（如果有）
+      let imageUrls: string[] = [];
+      if (imageUris.length > 0) {
+        setIsUploading(true);
+        for (const imgUri of imageUris) {
+          const imgFormData = new FormData();
+          const imgFileName = imgUri.split('/').pop() || 'image.jpg';
+          const imgFile = await createFormDataFile(imgUri, imgFileName, 'image/jpeg');
+          imgFormData.append('file', imgFile as any);
+          const uploadResponse = await fetch(`${API_BASE_URL}/api/v1/upload`, {
+            method: 'POST',
+            body: imgFormData,
+          });
+          if (uploadResponse.ok) {
+            const uploadData = await uploadResponse.json();
+            imageUrls.push(uploadData.url);
+          }
+        }
+        setIsUploading(false);
+      }
+
+      // 调用语音识别API（通过后端）
+      setTranscribedText('正在识别...');
+      const response = await fetch(`${API_BASE_URL}/api/v1/transcribe`, {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error('语音识别失败');
+      }
+
+      const data = await response.json();
+      const text = data.text || data.transcription || '';
+
+      if (!text) {
+        Alert.alert('提示', '未能识别到语音内容，请重试');
+        setIsProcessing(false);
+        return;
+      }
+
+      setTranscribedText(text);
+      setInputText(prev => prev ? `${prev}\n${text}` : text);
+
+      // 自动触发润色
+      setTimeout(() => {
+        handlePolishWithText(text, imageUrls);
+      }, 500);
+
+    } catch (error) {
+      console.error('语音识别失败:', error);
+      setIsProcessing(false);
+      Alert.alert('提示', '语音识别失败，请重试或检查网络');
+    }
+  };
+
+  // 使用指定文本进行润色
+  const handlePolishWithText = async (text: string, imageUrls: string[]) => {
+    if (!text.trim() && imageUrls.length === 0) {
+      setIsProcessing(false);
+      return;
+    }
+
+    if (sseRef.current) {
+      sseRef.current.close();
+    }
+
+    try {
+      setResultText('');
+      resultTextRef.current = '';
+
+      const sse = new RNSSE(`${API_BASE_URL}/api/v1/polish`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text, imageUrls, style: selectedStyle }),
+      });
+
+      sseRef.current = sse;
+
+      sse.addEventListener('message', (event) => {
+        if (event.data === '[DONE]') {
+          setResultText(resultTextRef.current);
+          saveHistory({
+            inputText: text,
+            inputImageUri: imageUrls[0] || null,
+            resultText: resultTextRef.current,
+            style: selectedStyle,
+          });
+          sse.close();
+        } else if (event.data) {
+          try {
+            const parsed = JSON.parse(event.data);
+            if (parsed.content) {
+              resultTextRef.current += parsed.content;
+              setResultText(resultTextRef.current);
+            }
+          } catch (e) {}
+        }
+      });
+
+      sse.addEventListener('error', (error) => {
+        console.error('SSE错误:', error);
+        setIsProcessing(false);
+      });
+
+      sse.addEventListener('close', () => {
+        setIsProcessing(false);
+      });
+
+    } catch (error) {
+      console.error('润色失败:', error);
+      setIsProcessing(false);
+    }
+  };
+
+  // 格式化录音时长
+  const formatDuration = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
   // AI润色处理
@@ -439,7 +658,7 @@ export default function HomeScreen() {
         <View style={styles.inputCard}>
           <TextInput
             style={styles.textInput}
-            placeholder="请输入需要润色的咨询内容..."
+            placeholder="请输入需要润色的咨询内容，或长按麦克风语音输入..."
             placeholderTextColor={COLORS.textPlaceholder}
             value={inputText}
             onChangeText={setInputText}
@@ -453,12 +672,32 @@ export default function HomeScreen() {
             <TouchableOpacity style={styles.iconButton} onPress={takePhoto}>
               <Ionicons name="camera-outline" size={22} color={COLORS.textSecondary} />
             </TouchableOpacity>
+            {/* 麦克风按钮 - 长按录音 */}
+            <TouchableOpacity
+              style={[styles.iconButton, isRecording && styles.micButtonActive]}
+              onPressIn={startRecording}
+              onPressOut={stopRecording}
+              delayLongPress={200}
+            >
+              <Ionicons
+                name={isRecording ? 'mic' : 'mic-outline'}
+                size={22}
+                color={isRecording ? '#EF4444' : COLORS.textSecondary}
+              />
+            </TouchableOpacity>
             {(inputText || imageUris.length > 0) && (
               <TouchableOpacity style={styles.iconButton} onPress={() => { setInputText(''); setImageUris([]); }}>
                 <Ionicons name="trash-outline" size={22} color={COLORS.textSecondary} />
               </TouchableOpacity>
             )}
           </View>
+          {/* 录音状态显示 */}
+          {isRecording && (
+            <View style={styles.recordingIndicator}>
+              <View style={styles.recordingDot} />
+              <Text style={styles.recordingText}>正在聆听... {formatDuration(recordingDuration)}</Text>
+            </View>
+          )}
         </View>
       </View>
 
@@ -867,6 +1106,30 @@ const styles = StyleSheet.create({
   },
   iconButton: {
     padding: 4,
+  },
+  micButtonActive: {
+    backgroundColor: 'rgba(239,68,68,0.1)',
+    borderRadius: 20,
+  },
+  recordingIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 8,
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: COLORS.border,
+  },
+  recordingDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#EF4444',
+    marginRight: 8,
+  },
+  recordingText: {
+    fontSize: 13,
+    color: '#EF4444',
+    fontWeight: '500',
   },
 
   // 图片预览
