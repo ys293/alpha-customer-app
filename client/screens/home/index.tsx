@@ -40,6 +40,187 @@ interface HistoryItem {
 // 润色风格类型
 type PolishStyle = 'professional' | 'friendly' | 'concise';
 
+// 快捷短语模板类型
+interface TemplateItem {
+  id: string;
+  category: string;
+  title: string;
+  content: string;
+}
+
+// 口腔义齿行业快捷短语库
+const TEMPLATE_LIBRARY: TemplateItem[] = [
+  // ========== 订单确认类 ==========
+  {
+    id: 't1',
+    category: '订单确认',
+    title: '加工单确认',
+    content: '您好，您的加工单已收到，我们将在确认模型及设计要求后安排生产，预计出货时间为XX日。如有任何疑问，请随时联系我们。',
+  },
+  {
+    id: 't2',
+    category: '订单确认',
+    title: '加急确认',
+    content: '您好，您的加急订单已确认。我们将优先安排生产，预计可在XX日前完成并发出。如需进一步沟通，请联系您的专属客服。',
+  },
+  {
+    id: 't3',
+    category: '订单确认',
+    title: '设计稿确认',
+    content: '您好，设计稿已完成，请您查看附件。如对设计有调整要求，请在XX日前反馈，逾期将默认确认并开始制作。感谢配合！',
+  },
+
+  // ========== 交期咨询类 ==========
+  {
+    id: 't4',
+    category: '交期咨询',
+    title: '交期回复',
+    content: '您好，根据目前生产排单情况，您的订单预计可在XX日出货。我们会提前一天通知您发货，请保持电话畅通。',
+  },
+  {
+    id: 't5',
+    category: '交期咨询',
+    title: '延期说明',
+    content: '您好，非常抱歉告知，由于近期订单量较大，您的订单需要延后XX天完成。我们会加急处理，预计XX日出货，敬请谅解。',
+  },
+  {
+    id: 't6',
+    category: '交期咨询',
+    title: '物流查询',
+    content: '您好，您的订单已于XX日通过XX快递发出，单号为XXXXX，请注意查收。如有物流异常，请及时联系我们。',
+  },
+
+  // ========== 技术问题类 ==========
+  {
+    id: 't7',
+    category: '技术问题',
+    title: '备牙要求',
+    content: '您好，关于您咨询的备牙问题，建议基牙预备时保证足够的肩台宽度（建议0.5mm以上）和良好的聚合度（建议6-8度），以确保修复体密合度。如有疑问，可参考我们提供的备牙指南或联系技术支持。',
+  },
+  {
+    id: 't8',
+    category: '技术问题',
+    title: '比色说明',
+    content: '您好，关于比色建议：①请在自然光下进行比色；②比色板应湿润但无多余水分；③建议拍摄患牙及邻牙照片供我们参考；④复杂病例可考虑使用比色仪。如需比色板，可联系客服申请。',
+  },
+  {
+    id: 't9',
+    category: '技术问题',
+    title: '印模要求',
+    content: '您好，请注意印模要求：①建议使用硅橡胶或聚醚橡胶取模；②印模必须清晰完整，无气泡、无撕裂；③咬合记录建议使用咬合纸或硅橡胶记录。感谢您的配合！',
+  },
+
+  // ========== 调改问题类 ==========
+  {
+    id: 't10',
+    category: '调改问题',
+    title: '调改确认',
+    content: '您好，您的调改要求已确认。我们将尽快安排处理，预计可在原定交期基础上延长XX天。如需加急处理，请提前告知，我们会尽力协调。',
+  },
+  {
+    id: 't11',
+    category: '调改问题',
+    title: '调改说明',
+    content: '您好，关于调改问题，已安排技师处理。请您将调改后的义齿照片或具体调改位置描述发给我们，以便精准处理。感谢您的耐心等待！',
+  },
+  {
+    id: 't12',
+    category: '调改问题',
+    title: '返工说明',
+    content: '您好，非常抱歉给您带来不便。我们已收到您的返工件，将重新制作。预计完成时间为XX日，届时会第一时间通知您发货。',
+  },
+
+  // ========== 产品材质类 ==========
+  {
+    id: 't13',
+    category: '产品材质',
+    title: '材质说明',
+    content: '您好，感谢您的咨询。该产品采用XX材质，具有XX特性（如：生物相容性好、强度高、美观性好等）。我们可提供材质证明及质量检测报告，如需了解更多信息，请随时告知。',
+  },
+  {
+    id: 't14',
+    category: '产品材质',
+    title: '材质选择建议',
+    content: '您好，根据您描述的临床需求，建议选择XX材质/方案。该方案在XX方面有优势，性价比高。如有其他要求或预算考量，也可提供参考方案。',
+  },
+
+  // ========== 费用核算类 ==========
+  {
+    id: 't15',
+    category: '费用核算',
+    title: '报价说明',
+    content: '您好，您咨询的报价如下：XX产品XX元/颗，加工费XX元，合计XX元。以上为不含税价格，如需发票请另行告知。付款方式为XX。',
+  },
+  {
+    id: 't16',
+    category: '费用核算',
+    title: '账单核对',
+    content: '您好，本月账单已生成，详情如下：XX订单共计XX元。请于XX日前完成付款，以便我们及时安排生产。如有账单疑问，请联系财务核对。',
+  },
+
+  // ========== 物流快递类 ==========
+  {
+    id: 't17',
+    category: '物流快递',
+    title: '发货通知',
+    content: '您好，您的订单已发货！快递单号：XXXXX，预计XX日送达。请注意查收并及时反馈签收情况。如有破损，请拒收并联系我们。',
+  },
+  {
+    id: 't18',
+    category: '物流快递',
+    title: '签收确认',
+    content: '您好，请问您是否已收到货物？请检查外包装是否完好、件数是否正确、义齿是否完整无损。签收后如有任何问题，请24小时内联系我们处理。',
+  },
+
+  // ========== 质量反馈类 ==========
+  {
+    id: 't19',
+    category: '质量反馈',
+    title: '问题受理',
+    content: '您好，感谢您的反馈。我们已收到您描述的问题，将尽快核实处理。请您提供清晰的问题照片及义齿编号，以便我们快速定位原因并给出解决方案。',
+  },
+  {
+    id: 't20',
+    category: '质量反馈',
+    title: '质量保证',
+    content: '您好，我们对产品质量负责。如确认属于制作问题，我们将免费重新制作并承担来回运费。请您将问题义齿寄回，我们会尽快为您处理。',
+  },
+
+  // ========== 售后跟进类 ==========
+  {
+    id: 't21',
+    category: '售后跟进',
+    title: '使用回访',
+    content: '您好，打扰一下，我是XX加工中心的客服。请问您近期制作的义齿使用情况如何？佩戴是否舒适？有无其他问题需要协助处理？',
+  },
+  {
+    id: 't22',
+    category: '售后跟进',
+    title: '满意度调查',
+    content: '您好，感谢您一直以来的支持！请您对本次服务进行评价（满意/一般/不满意），您的意见是我们改进的动力。如有任何建议，欢迎随时告知！',
+  },
+
+  // ========== 日常沟通类 ==========
+  {
+    id: 't23',
+    category: '日常沟通',
+    title: '节日问候',
+    content: '您好，XX节将至，祝您XX节快乐！感谢您一直以来的信任与支持，我们将继续为您提供优质的服务。如有任何需要，请随时联系我们！',
+  },
+  {
+    id: 't24',
+    category: '日常沟通',
+    title: '新品推荐',
+    content: '您好，为您推荐我们的新品——XX。该产品采用XX技术，具有XX优势，特别适合XX病例。如有需要，可联系客服了解详情或申请试用。',
+  },
+  {
+    id: 't25',
+    category: '日常沟通',
+    title: '感谢合作',
+    content: '您好，感谢您长期以来的支持与信任！我们将继续努力，为您提供更优质的产品和服务。如有任何建议或需求，请随时告知，期待与您合作愉快！',
+  },
+];
+
 // 风格配置
 const POLISH_STYLES: { key: PolishStyle; label: string; icon: string; desc: string }[] = [
   { key: 'professional', label: '专业', icon: 'briefcase', desc: '严谨专业' },
@@ -78,6 +259,11 @@ export default function HomeScreen() {
   const [imagePreviewUri, setImagePreviewUri] = useState<string | null>(null);
   const [copiedAnimation] = useState(new Animated.Value(0));
   const [selectedStyle, setSelectedStyle] = useState<PolishStyle>('professional'); // 默认专业风格
+  const [showTemplateLibrary, setShowTemplateLibrary] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState<string>('全部');
+  
+  // 获取所有分类
+  const categories = ['全部', ...Array.from(new Set(TEMPLATE_LIBRARY.map(t => t.category)))];
 
   const sseRef = useRef<RNSSE | null>(null);
   const resultTextRef = useRef('');
@@ -469,6 +655,22 @@ export default function HomeScreen() {
     resultTextRef.current = '';
   };
 
+  // 插入快捷短语模板
+  const insertTemplate = (template: TemplateItem) => {
+    setInputText(prev => prev ? `${prev}\n\n【${template.title}】\n${template.content}` : `【${template.title}】\n${template.content}`);
+    setShowTemplateLibrary(false);
+    Toast.show({
+      type: 'success',
+      text1: '已插入模板',
+      text2: template.title,
+    });
+  };
+
+  // 过滤模板列表
+  const filteredTemplates = selectedCategory === '全部' 
+    ? TEMPLATE_LIBRARY 
+    : TEMPLATE_LIBRARY.filter(t => t.category === selectedCategory);
+
   // 格式化时间
   const formatTime = (timestamp: number) => {
     const date = new Date(timestamp);
@@ -661,6 +863,14 @@ export default function HomeScreen() {
                 >
                   <Ionicons name="camera-outline" size={22} color={COLORS.primary} />
                   <Text style={styles.actionButtonText}>拍照</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[styles.actionButton, styles.templateButton]}
+                  onPress={() => setShowTemplateLibrary(true)}
+                >
+                  <Ionicons name="document-text-outline" size={22} color={COLORS.primary} />
+                  <Text style={styles.actionButtonText}>快捷短语</Text>
                 </TouchableOpacity>
               </View>
 
@@ -909,6 +1119,82 @@ export default function HomeScreen() {
             </TouchableOpacity>
           </View>
         </TouchableOpacity>
+      </Modal>
+
+      {/* 快捷短语库弹窗 */}
+      <Modal
+        visible={showTemplateLibrary}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowTemplateLibrary(false)}
+      >
+        <View style={styles.templateModalOverlay}>
+          <View style={styles.templateModalContent}>
+            <View style={styles.templateModalHeader}>
+              <View>
+                <Text style={styles.templateModalTitle}>快捷短语库</Text>
+                <Text style={styles.templateModalSubtitle}>口腔义齿行业常用沟通模板</Text>
+              </View>
+              <TouchableOpacity onPress={() => setShowTemplateLibrary(false)}>
+                <Ionicons name="close" size={24} color={COLORS.textSecondary} />
+              </TouchableOpacity>
+            </View>
+
+            {/* 分类筛选 */}
+            <ScrollView 
+              horizontal 
+              showsHorizontalScrollIndicator={false}
+              style={styles.templateCategoryScroll}
+              contentContainerStyle={styles.templateCategoryContent}
+            >
+              {categories.map((cat) => (
+                <TouchableOpacity
+                  key={cat}
+                  style={[
+                    styles.templateCategoryItem,
+                    selectedCategory === cat && styles.templateCategoryItemActive,
+                  ]}
+                  onPress={() => setSelectedCategory(cat)}
+                >
+                  <Text style={[
+                    styles.templateCategoryText,
+                    selectedCategory === cat && styles.templateCategoryTextActive,
+                  ]}>
+                    {cat}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+
+            {/* 模板列表 */}
+            <ScrollView 
+              style={styles.templateList}
+              showsVerticalScrollIndicator={false}
+            >
+              {filteredTemplates.map((template) => (
+                <TouchableOpacity
+                  key={template.id}
+                  style={styles.templateItem}
+                  onPress={() => insertTemplate(template)}
+                >
+                  <View style={styles.templateItemHeader}>
+                    <View style={styles.templateCategoryBadge}>
+                      <Text style={styles.templateCategoryBadgeText}>{template.category}</Text>
+                    </View>
+                    <Text style={styles.templateItemTitle}>{template.title}</Text>
+                  </View>
+                  <Text style={styles.templateItemContent} numberOfLines={3}>
+                    {template.content}
+                  </Text>
+                  <View style={styles.templateItemFooter}>
+                    <Text style={styles.templateInsertHint}>点击插入到输入框</Text>
+                    <Ionicons name="add-circle-outline" size={20} color={COLORS.primary} />
+                  </View>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
+        </View>
       </Modal>
     </KeyboardAvoidingView>
   );
@@ -1445,5 +1731,119 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 50,
     right: 20,
+  },
+
+  // 快捷短语库样式
+  templateButton: {
+    backgroundColor: 'rgba(0,184,148,0.12)',
+  },
+  templateModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'flex-end',
+  },
+  templateModalContent: {
+    backgroundColor: COLORS.surface,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    maxHeight: '85%',
+    paddingBottom: 34,
+  },
+  templateModalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    padding: 20,
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.background,
+  },
+  templateModalTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: COLORS.textPrimary,
+    marginBottom: 4,
+  },
+  templateModalSubtitle: {
+    fontSize: 13,
+    color: COLORS.textSecondary,
+  },
+  templateCategoryScroll: {
+    maxHeight: 50,
+  },
+  templateCategoryContent: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    gap: 8,
+    flexDirection: 'row',
+  },
+  templateCategoryItem: {
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 16,
+    backgroundColor: COLORS.background,
+    marginRight: 8,
+  },
+  templateCategoryItemActive: {
+    backgroundColor: COLORS.primary,
+  },
+  templateCategoryText: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: COLORS.textSecondary,
+  },
+  templateCategoryTextActive: {
+    color: '#FFFFFF',
+  },
+  templateList: {
+    paddingHorizontal: 16,
+    paddingTop: 8,
+  },
+  templateItem: {
+    backgroundColor: COLORS.background,
+    borderRadius: 16,
+    padding: 14,
+    marginBottom: 10,
+  },
+  templateItemHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+    gap: 8,
+  },
+  templateCategoryBadge: {
+    backgroundColor: COLORS.primaryLight,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+  },
+  templateCategoryBadgeText: {
+    fontSize: 11,
+    color: COLORS.primary,
+    fontWeight: '600',
+  },
+  templateItemTitle: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: COLORS.textPrimary,
+  },
+  templateItemContent: {
+    fontSize: 13,
+    color: COLORS.textSecondary,
+    lineHeight: 20,
+  },
+  templateItemFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 10,
+    paddingTop: 10,
+    borderTopWidth: 1,
+    borderTopColor: COLORS.surface,
+  },
+  templateInsertHint: {
+    fontSize: 12,
+    color: COLORS.primary,
+    fontWeight: '500',
   },
 });
