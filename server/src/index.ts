@@ -448,6 +448,117 @@ app.post('/api/v1/feedback', async (req, res) => {
   }
 });
 
+// ========== 话术库管理接口 ==========
+
+// 获取所有话术库
+app.get('/api/v1/templates', async (req, res) => {
+  try {
+    if (!supabase) {
+      return res.json({ templates: [], message: '数据库未配置' });
+    }
+
+    const { data, error } = await supabase
+      .from('template_library')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+
+    res.json({ templates: data || [] });
+  } catch (error) {
+    console.error('获取话术库失败:', error);
+    res.status(500).json({ error: '获取话术库失败' });
+  }
+});
+
+// 添加新话术
+app.post('/api/v1/templates', async (req, res) => {
+  try {
+    const { category, title, content, is_auto_added, auto_note } = req.body;
+
+    if (!category || !title || !content) {
+      return res.status(400).json({ error: '缺少必填字段' });
+    }
+
+    if (!supabase) {
+      return res.status(500).json({ error: '数据库未配置' });
+    }
+
+    const { data, error } = await supabase
+      .from('template_library')
+      .insert({
+        category,
+        title,
+        content,
+        is_auto_added: is_auto_added || false,
+        auto_note: auto_note || null
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    res.json({ success: true, template: data });
+  } catch (error) {
+    console.error('添加话术失败:', error);
+    res.status(500).json({ error: '添加话术失败' });
+  }
+});
+
+// 更新话术
+app.put('/api/v1/templates/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { category, title, content } = req.body;
+
+    if (!supabase) {
+      return res.status(500).json({ error: '数据库未配置' });
+    }
+
+    const { data, error } = await supabase
+      .from('template_library')
+      .update({
+        category,
+        title,
+        content,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    res.json({ success: true, template: data });
+  } catch (error) {
+    console.error('更新话术失败:', error);
+    res.status(500).json({ error: '更新话术失败' });
+  }
+});
+
+// 删除话术
+app.delete('/api/v1/templates/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (!supabase) {
+      return res.status(500).json({ error: '数据库未配置' });
+    }
+
+    const { error } = await supabase
+      .from('template_library')
+      .delete()
+      .eq('id', id);
+
+    if (error) throw error;
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error('删除话术失败:', error);
+    res.status(500).json({ error: '删除话术失败' });
+  }
+});
+
 // 获取话术库建议（高频场景）
 app.get('/api/v1/suggestions', async (req, res) => {
   try {

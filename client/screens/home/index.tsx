@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback, useEffect } from 'react';
+import React, { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import {
   View,
   Text,
@@ -58,44 +58,47 @@ interface TemplateItem {
 // 口腔义齿行业快捷短语库（常用分类优先）
 const TEMPLATE_LIBRARY: TemplateItem[] = [
   // 六、工期延后告知（高频）
-  { id: 't8', category: '延期告知', title: '工艺/排单延期', content: 'XX 医生您好，跟您致歉，因【工艺复杂/原料调配/批量排单】原因，XXX 患者订单预计延迟至 XX 时间交付，给您带来不便非常抱歉，我们会加急赶工。' },
-  { id: 't9', category: '延期告知', title: '质检不达标返工', content: 'XX 医生您好，非常抱歉。XXX 患者订单在【工序质检/最终终检】时发现细节问题，未达到出货标准，现已退回重新修整制作，今日无法交付，预计 XX 时间完成。我们会严格把控品质，还请您谅解。' },
-  { id: 't10', category: '延期告知', title: '沟通耗时延期', content: 'XX 医生您好，非常抱歉。XXX 患者订单前期与临床制作沟通对接，占用了部分工时，导致订单进度延后，今日暂无法出货，预计 XX 时间交付，望您理解。' },
-  { id: 't11', category: '延期告知', title: '工艺复杂延期', content: 'XX 医生您好，实在抱歉。XXX 患者订单因【加工要求特殊/加工项目复杂/多生产线制作】，制作耗时超出预期，今日无法交付，预计 XX 时间完成，还请您谅解。' },
-  { id: 't12', category: '延期告知', title: '美学要求延期', content: 'XX 医生您好，非常抱歉。XXX 患者此订单【个性化制作要求较高/形态颜色美观要求高】技师需要反复打磨细节、多次微调，因此进度有所延后，今日无法交付，预计 XX 时间我们会完成出货。' },
-  { id: 't13', category: '延期告知', title: '全厂质量复检', content: 'XX 医生您好，实在抱歉。车间近期对整批产品开展全面质量复检，该订单进度随之顺延，今日无法交付，预计 XX 时间完成，敬请包涵。' },
+  { id: 't8', category: '延期告知', title: '工艺/排单延期', content: 'XX 医生您好，跟您致歉，因【工艺复杂/原料调配/批量排单】原因，XXX 患者订单预计延迟至 XX 时间交付，给您带来不便非常抱歉，我们会加急赶工。', isPreset: true },
+  { id: 't9', category: '延期告知', title: '质检不达标返工', content: 'XX 医生您好，非常抱歉。XXX 患者订单在【工序质检/最终终检】时发现细节问题，未达到出货标准，现已退回重新修整制作，今日无法交付，预计 XX 时间完成。我们会严格把控品质，还请您谅解。', isPreset: true },
+  { id: 't10', category: '延期告知', title: '沟通耗时延期', content: 'XX 医生您好，非常抱歉。XXX 患者订单前期与临床制作沟通对接，占用了部分工时，导致订单进度延后，今日暂无法出货，预计 XX 时间交付，望您理解。', isPreset: true },
+  { id: 't11', category: '延期告知', title: '工艺复杂延期', content: 'XX 医生您好，实在抱歉。XXX 患者订单因【加工要求特殊/加工项目复杂/多生产线制作】，制作耗时超出预期，今日无法交付，预计 XX 时间完成，还请您谅解。', isPreset: true },
+  { id: 't12', category: '延期告知', title: '美学要求延期', content: 'XX 医生您好，非常抱歉。XXX 患者此订单【个性化制作要求较高/形态颜色美观要求高】技师需要反复打磨细节、多次微调，因此进度有所延后，今日无法交付，预计 XX 时间我们会完成出货。', isPreset: true },
+  { id: 't13', category: '延期告知', title: '全厂质量复检', content: 'XX 医生您好，实在抱歉。车间近期对整批产品开展全面质量复检，该订单进度随之顺延，今日无法交付，预计 XX 时间完成，敬请包涵。', isPreset: true },
 
   // 七、模型/基牙异常（高频）
-  { id: 't14', category: '模型异常', title: '咬合空间不足', content: 'XX 医生您好，制作 XXX 患者义齿时，发现模型基牙咬合空间不足，达不到对应材料的最小厚度要求，无法直接加工。想跟您确认：是在模型上修整基牙/对颌牙并做好标记，还是麻烦您重新备牙取模？' },
-  { id: 't15', category: '模型异常', title: '邻牙存在倒凹', content: 'XX 医生您好，在制作 XXX 患者义齿时，发现模型存在邻牙倒凹，直接制作将会出现无法就位或邻接无接触等问题，无法直接加工制作。想跟您确认：是在模型上修整邻牙并作好标记，还是麻烦您重新备牙取模呢？' },
-  { id: 't16', category: '模型异常', title: '少量倒凹处理', content: 'XX 医生您好，打扰您。XXX 患者的模型基牙存在少量倒凹，直接制作会引发义齿边缘不密合、飘空等情况，影响使用效果，所以不建议直接加工。若直接加工，易造成义齿边缘不密合、出现间隙飘空，因此不建议直接制作。想和您沟通处理方式：1.我们可修除模型倒凹并做标记，供您口内参照预备；2.也可直接填补倒凹制作；3.或是辛苦您重新备牙取模，您看哪种更合适？' },
-  { id: 't17', category: '模型异常', title: '桥体倒凹处理', content: 'XX 医生您好，打扰您了。XXX 患者的模型桥体存在倒凹，暂无共同就位道，倒凹集中在（）区域。直接制作容易出现义齿就位不畅、边缘不密合、飘空等问题，故而不建议直接做至。想和您沟通下，是我们修整模型去除倒凹并做好标记再加工，还是辛苦您重新备牙取模呢？' },
-  { id: 't18', category: '模型异常', title: '邻面形态异常', content: 'XX 医生您好，打扰您。XXX 患者模型邻面形态异常（见附图），系印模/口扫误差造成。直接加工易引发就位不畅、邻面接触异常，特此提醒。请您先确认：口内情况是否与模型一致？如一致，无其他要求我们按照现模型制作。若不一致，可选方案：1.我方刮除模型异常区域并标记，后续正常制作；2.重新约患者检查、再次取模。您看哪种更合适？' },
+  { id: 't14', category: '模型异常', title: '咬合空间不足', content: 'XX 医生您好，制作 XXX 患者义齿时，发现模型基牙咬合空间不足，达不到对应材料的最小厚度要求，无法直接加工。想跟您确认：是在模型上修整基牙/对颌牙并做好标记，还是麻烦您重新备牙取模？', isPreset: true },
+  { id: 't15', category: '模型异常', title: '邻牙存在倒凹', content: 'XX 医生您好，在制作 XXX 患者义齿时，发现模型存在邻牙倒凹，直接制作将会出现无法就位或邻接无接触等问题，无法直接加工制作。想跟您确认：是在模型上修整邻牙并作好标记，还是麻烦您重新备牙取模呢？', isPreset: true },
+  { id: 't16', category: '模型异常', title: '少量倒凹处理', content: 'XX 医生您好，打扰您。XXX 患者的模型基牙存在少量倒凹，直接制作会引发义齿边缘不密合、飘空等情况，影响使用效果，所以不建议直接加工。若直接加工，易造成义齿边缘不密合、出现间隙飘空，因此不建议直接制作。想和您沟通处理方式：1.我们可修除模型倒凹并做标记，供您口内参照预备；2.也可直接填补倒凹制作；3.或是辛苦您重新备牙取模，您看哪种更合适？', isPreset: true },
+  { id: 't17', category: '模型异常', title: '桥体倒凹处理', content: 'XX 医生您好，打扰您了。XXX 患者的模型桥体存在倒凹，暂无共同就位道，倒凹集中在（）区域。直接制作容易出现义齿就位不畅、边缘不密合、飘空等问题，故而不建议直接做至。想和您沟通下，是我们修整模型去除倒凹并做好标记再加工，还是辛苦您重新备牙取模呢？', isPreset: true },
+  { id: 't18', category: '模型异常', title: '邻面形态异常', content: 'XX 医生您好，打扰您。XXX 患者模型邻面形态异常（见附图），系印模/口扫误差造成。直接加工易引发就位不畅、邻面接触异常，特此提醒。请您先确认：口内情况是否与模型一致？如一致，无其他要求我们按照现模型制作。若不一致，可选方案：1.我方刮除模型异常区域并标记，后续正常制作；2.重新约患者检查、再次取模。您看哪种更合适？', isPreset: true },
 
   // 八、咬合记录异常/缺失（高频）
-  { id: 't19', category: '咬合记录', title: '缺咬合记录', content: 'XX 医生您好，打扰您了。制作 XXX 患者义齿时，发现模型咬合存在异常，随件也未附带咬合记录，目前无法正常上架制作。为保证咬合精度与成品效果，麻烦您抽空安排患者重新采集咬合记录。辛苦您了，收到消息还请抽空告知我一下，谢谢！' },
-  { id: 't20', category: '咬合记录', title: '咬合精度不足', content: 'XX 医生您好，打扰您了。制作 XXX 患者义齿时，发现模型咬合存在异常，结合随附的咬合记录试配后，咬合状态仍不够精准，暂时无法正常上架制作。附图/视频是依据现有咬合记录模拟的效果，麻烦您核对下和患者口内实际情况是否存在偏差。若状态一致，我们就按当前咬合继续制作；若偏差较大，为保障成品使用效果，还请您安排患者重新采集咬合记录。辛苦您了，收到消息还望抽空回复，谢谢！' },
+  { id: 't19', category: '咬合记录', title: '缺咬合记录', content: 'XX 医生您好，打扰您了。制作 XXX 患者义齿时，发现模型咬合存在异常，随件也未附带咬合记录，目前无法正常上架制作。为保证咬合精度与成品效果，麻烦您抽空安排患者重新采集咬合记录。辛苦您了，收到消息还请抽空告知我一下，谢谢！', isPreset: true },
+  { id: 't20', category: '咬合记录', title: '咬合精度不足', content: 'XX 医生您好，打扰您了。制作 XXX 患者义齿时，发现模型咬合存在异常，结合随附的咬合记录试配后，咬合状态仍不够精准，暂时无法正常上架制作。附图/视频是依据现有咬合记录模拟的效果，麻烦您核对下和患者口内实际情况是否存在偏差。若状态一致，我们就按当前咬合继续制作；若偏差较大，为保障成品使用效果，还请您安排患者重新采集咬合记录。辛苦您了，收到消息还望抽空回复，谢谢！', isPreset: true },
 
   // 九、比色/照片问题（高频）
-  { id: 't21', category: '比色问题', title: '比色无法确定', content: 'XX 医生您好，打扰您。XXX 患者的比色照片，受拍摄光线、比色板摆放角度影响，且所选色号和邻牙色差较明显，暂时无法确定制作颜色。如果您还记得匹配邻牙的准确色板，麻烦告知我们，我们将按您的要求制作；若记忆不清，为保证最终色泽效果，还请您安排患者重新比色。辛苦您了，收到消息还请抽空回复，谢谢！' },
+  { id: 't21', category: '比色问题', title: '比色无法确定', content: 'XX 医生您好，打扰您。XXX 患者的比色照片，受拍摄光线、比色板摆放角度影响，且所选色号和邻牙色差较明显，暂时无法确定制作颜色。如果您还记得匹配邻牙的准确色板，麻烦告知我们，我们将按您的要求制作；若记忆不清，为保证最终色泽效果，还请您安排患者重新比色。辛苦您了，收到消息还请抽空回复，谢谢！', isPreset: true },
 
   // 一、资料/物料缺失
-  { id: 't1', category: '物料缺失', title: '缺种植品牌/材料', content: 'XX 医生您好，XXX 患者此订单缺少【种植品牌系统/加工产品/加工材料/制作颜色/比色照/】，暂时无法安排生产。麻烦您补充相关资料信息，收到后我们第一时间排单，辛苦啦！' },
-  { id: 't2', category: '物料缺失', title: '缺转移杆/咬合记录', content: 'XX 医生您好，XXX 患者此订单缺少【种植转移杆/咬合记录/】，暂时无法安排生产。麻烦您这边安排一下，收到后我们第一时间排单，辛苦啦！' },
+  { id: 't1', category: '物料缺失', title: '缺种植品牌/材料', content: 'XX 医生您好，XXX 患者此订单缺少【种植品牌系统/加工产品/加工材料/制作颜色/比色照/】，暂时无法安排生产。麻烦您补充相关资料信息，收到后我们第一时间排单，辛苦啦！', isPreset: true },
+  { id: 't2', category: '物料缺失', title: '缺转移杆/咬合记录', content: 'XX 医生您好，XXX 患者此订单缺少【种植转移杆/咬合记录/】，暂时无法安排生产。麻烦您这边安排一下，收到后我们第一时间排单，辛苦啦！', isPreset: true },
 
   // 二、订单加急告知
-  { id: 't3', category: '加急告知', title: '加急订单确认', content: 'XX 医生您好，收到您的加急需求，该订单我们已安排加急制作，预计 XX 时间可以交付。若出现特殊状况，我会及时告知您。' },
+  { id: 't3', category: '加急告知', title: '加急订单确认', content: 'XX 医生您好，收到您的加急需求，该订单我们已安排加急制作，预计 XX 时间可以交付。若出现特殊状况，我会及时告知您。', isPreset: true },
 
   // 三、订单特殊工艺/备注要求确认
-  { id: 't4', category: '工艺确认', title: '特殊工艺确认', content: 'XX 医生您好，加工单备注要求【颈缘多延伸/切端通透/发设计图/上颌架后拍照/车瓷完成后拍照】，我们按此要求制作，您看是否还有其他补充要求？' },
+  { id: 't4', category: '工艺确认', title: '特殊工艺确认', content: 'XX 医生您好，加工单备注要求【颈缘多延伸/切端通透/发设计图/上颌架后拍照/车瓷完成后拍照】，我们按此要求制作，您看是否还有其他补充要求？', isPreset: true },
 
   // 四、常规订单进度同步
-  { id: 't5', category: '进度同步', title: '正常生产告知', content: 'XX 医生您好，查询了 XXX 患者的订单目前制作顺利，会按原定日期准时交货，请您安心。如遇突发情况，我会第一时间提前和您沟通。' },
-  { id: 't6', category: '进度同步', title: '质检发货通知', content: 'XX 医生您好，同步下 XXX 患者订单进度：目前已完成制作，正在最终质检，稍后安排打包发货，快递单号/配送信息打包完成后将会发给您。' },
+  { id: 't5', category: '进度同步', title: '正常生产告知', content: 'XX 医生您好，查询了 XXX 患者的订单目前制作顺利，会按原定日期准时交货，请您安心。如遇突发情况，我会第一时间提前和您沟通。', isPreset: true },
+  { id: 't6', category: '进度同步', title: '质检发货通知', content: 'XX 医生您好，同步下 XXX 患者订单进度：目前已完成制作，正在最终质检，稍后安排打包发货，快递单号/配送信息打包完成后将会发给您。', isPreset: true },
 
   // 五、货品已发货/配送通知
-  { id: 't7', category: '发货通知', title: '发货/同城配送', content: 'XX 医生您好，您的货品已发出，快递单号：XXX，物流可自行查询；同城配送预计 XX 时间送达门诊，请注意查收。' },
+  { id: 't7', category: '发货通知', title: '发货/同城配送', content: 'XX 医生您好，您的货品已发出，快递单号：XXX，物流可自行查询；同城配送预计 XX 时间送达门诊，请注意查收。', isPreset: true },
 ];
+
+// 预设模板库（用于重置）
+const PRESET_TEMPLATES: TemplateItem[] = [...TEMPLATE_LIBRARY];
 
 // 底部导航配置
 const TAB_ITEMS = [
@@ -117,8 +120,27 @@ const COLORS = {
 	  text: '#6B7280',
 	  muted: '#9CA3AF',
   success: '#10B981',
+  warning: '#F59E0B',
+  danger: '#EF4444',
   border: '#E5E7EB',
 };
+
+// 话术库数据类型
+interface TemplateItem {
+  id: string;
+  title: string;
+  content: string;
+  category: string;
+  isPreset?: boolean;      // 是否为预设模板（不可删除）
+  isAutoAdded?: boolean;   // 是否为AI自动添加
+  autoNote?: string;       // AI添加时的备注说明
+}
+
+// 预设话术库（简化版示例）
+const DEFAULT_TEMPLATES: TemplateItem[] = [
+  { id: '1', title: '咬合空间不足(≤0.4mm)', content: 'XX医生您好，制作XXX患者义齿时，发现模型基牙咬合空间不足，达不到对应材料的最小厚度要求，无法直接加工。和您确认一下是在模型上修整基牙/对颌牙Xmm并做好标记再制作？辛苦您了，收到消息还请抽空回复，谢谢！', category: '模型异常' },
+  { id: '2', title: '咬合空间不足(>0.4mm)', content: 'XX医生您好，制作XXX患者义齿时，发现模型基牙咬合空间不足，达不到对应材料的最小厚度要求，无法直接加工。想跟您确认：是在模型上修整基牙/对颌牙并做好标记，还是麻烦您重新备牙取模？辛苦您了，收到消息还请抽空回复，谢谢！', category: '模型异常' },
+];
 
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
@@ -145,28 +167,61 @@ export default function HomeScreen() {
   const [sceneType, setSceneType] = useState('');
   const [isSubmittingFeedback, setIsSubmittingFeedback] = useState(false);
 
+  // 话术库编辑状态
+  const [customTemplates, setCustomTemplates] = useState<TemplateItem[]>([]);
+  const [showTemplateModal, setShowTemplateModal] = useState(false);
+  const [editingTemplate, setEditingTemplate] = useState<TemplateItem | null>(null);
+  const [templateTitle, setTemplateTitle] = useState('');
+  const [templateContent, setTemplateContent] = useState('');
+  const [templateCategory, setTemplateCategory] = useState('自定义');
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deletingTemplateId, setDeletingTemplateId] = useState<string | null>(null);
+
   const sseRef = useRef<RNSSE | null>(null);
   const resultTextRef = useRef('');
   const recordingRef = useRef<Audio.Recording | null>(null);
   const recordingTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-  // 获取所有分类
-  const categories = ['全部', ...Array.from(new Set(TEMPLATE_LIBRARY.map(t => t.category)))];
+  // 获取所有分类（包含自定义分类）
+  const allCategories = ['全部', ...Array.from(new Set([...TEMPLATE_LIBRARY.map(t => t.category), ...customTemplates.map(t => t.category)]))];
+  
+  // 合并话术库
+  const mergedTemplates = [...TEMPLATE_LIBRARY, ...customTemplates];
+  
+  // 根据分类筛选
   const filteredTemplates = selectedCategory === '全部' 
-    ? TEMPLATE_LIBRARY 
-    : TEMPLATE_LIBRARY.filter(t => t.category === selectedCategory);
+    ? mergedTemplates 
+    : mergedTemplates.filter(t => t.category === selectedCategory);
 
-  // 加载历史记录
+  // 保存自定义话术库到本地
+  const saveCustomTemplates = useCallback(async (templates: TemplateItem[]) => {
+    try {
+      await AsyncStorage.setItem('custom_templates', JSON.stringify(templates));
+    } catch (error) {
+      console.error('保存话术库失败:', error);
+    }
+  }, []);
+
+  // ========== 初始化加载历史记录和话术库 ==========
   const loadHistory = useCallback(async () => {
     try {
       const stored = await AsyncStorage.getItem(STORAGE_KEY);
       if (stored) {
         setHistoryList(JSON.parse(stored));
       }
+      // 加载自定义话术库
+      const customStored = await AsyncStorage.getItem('custom_templates');
+      if (customStored) {
+        setCustomTemplates(JSON.parse(customStored));
+      }
     } catch (error) {
       console.error('加载历史记录失败:', error);
     }
   }, []);
+
+  // 合并内置和自定义模板
+  const allTemplates = [...TEMPLATE_LIBRARY, ...customTemplates];
+  const mergedCategories = ['全部', ...Array.from(new Set(allTemplates.map(t => t.category)))];
 
   // 初始化加载历史
   React.useEffect(() => {
@@ -895,16 +950,88 @@ export default function HomeScreen() {
     }
   };
 
+  // ========== 话术库管理函数 ==========
+  const handleAddTemplate = () => {
+    setEditingTemplate(null);
+    setTemplateTitle('');
+    setTemplateContent('');
+    setSelectedCategory(templateCategory[0]);
+    setShowTemplateModal(true);
+  };
+
+  const handleEditTemplate = (template: TemplateItem) => {
+    setEditingTemplate(template);
+    setTemplateTitle(template.title);
+    setTemplateContent(template.content);
+    setShowTemplateModal(true);
+  };
+
+  const handleDeleteTemplate = async (template: TemplateItem) => {
+    Alert.alert('确认删除', `确定要删除话术"${template.title}"吗？`, [
+      { text: '取消', style: 'cancel' },
+      {
+        text: '删除',
+        style: 'destructive',
+        onPress: async () => {
+          const newCustom = customTemplates.filter(t => t.id !== template.id);
+          setCustomTemplates(newCustom);
+          await saveCustomTemplates(newCustom);
+          Alert.alert('删除成功', '话术已删除');
+        },
+      },
+    ]);
+  };
+
+  const handleSaveTemplate = async () => {
+    if (!templateTitle.trim() || !templateContent.trim()) {
+      Alert.alert('提示', '请填写话术标题和内容');
+      return;
+    }
+    if (editingTemplate) {
+      const updated = customTemplates.map(t => t.id === editingTemplate.id ? { ...t, title: templateTitle.trim(), content: templateContent.trim() } : t);
+      setCustomTemplates(updated);
+      await saveCustomTemplates(updated);
+      Alert.alert('修改成功', '话术已更新');
+    } else {
+      const newTemplate: TemplateItem = {
+        id: `custom_${Date.now()}`,
+        title: templateTitle.trim(),
+        content: templateContent.trim(),
+        category: '自定义',
+      };
+      const updated = [...customTemplates, newTemplate];
+      setCustomTemplates(updated);
+      await saveCustomTemplates(updated);
+      Alert.alert('添加成功', '新话术已保存');
+    }
+    setShowTemplateModal(false);
+  };
+
+  // 合并预设和自定义模板（自定义优先）
+  const mergedFilteredTemplates = useMemo(() => {
+    const filtered = selectedCategory === '全部' 
+      ? [...PRESET_TEMPLATES, ...customTemplates]
+      : [...PRESET_TEMPLATES.filter(t => t.category === selectedCategory), ...customTemplates.filter(t => t.category === selectedCategory)];
+    return filtered;
+  }, [selectedCategory, customTemplates]);
+
   // ========== 渲染话术库页面 ==========
   const renderTemplatesTab = () => (
     <View style={styles.tabContent}>
+      {/* 话术库头部 */}
       <View style={styles.templateHeader}>
-        <Text style={styles.templateTitle}>话术库</Text>
-        <Text style={styles.templateSubtitle}>口腔义齿行业常用沟通模板</Text>
+        <View>
+          <Text style={styles.templateTitle}>话术库</Text>
+          <Text style={styles.templateSubtitle}>口腔义齿行业常用沟通模板</Text>
+        </View>
+        <TouchableOpacity style={styles.addTemplateBtn} onPress={handleAddTemplate}>
+          <Ionicons name="add-outline" size={20} color="#FFF" />
+          <Text style={styles.addTemplateBtnText}>新增</Text>
+        </TouchableOpacity>
       </View>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.categoryScroll}>
         <View style={styles.categoryRow}>
-          {categories.map((cat) => (
+          {allCategories.map((cat) => (
             <TouchableOpacity
               key={cat}
               style={[styles.categoryItem, selectedCategory === cat && styles.categoryItemActive]}
@@ -920,8 +1047,18 @@ export default function HomeScreen() {
           <TouchableOpacity key={template.id} style={styles.templateItem} onPress={() => copyTemplate(template)}>
             <View style={styles.templateItemHeader}>
               <View style={styles.templateBadge}><Text style={styles.templateBadgeText}>{template.category}</Text></View>
-              <Text style={styles.templateItemTitle}>{template.title}</Text>
+              <View style={styles.templateItemActions}>
+                <TouchableOpacity style={styles.templateActionBtn} onPress={() => handleEditTemplate(template)}>
+                  <Ionicons name="create-outline" size={18} color={COLORS.primary} />
+                </TouchableOpacity>
+                {!template.isPreset && (
+                  <TouchableOpacity style={styles.templateActionBtn} onPress={() => handleDeleteTemplate(template)}>
+                    <Ionicons name="trash-outline" size={18} color="#EF4444" />
+                  </TouchableOpacity>
+                )}
+              </View>
             </View>
+            <Text style={styles.templateItemTitle}>{template.title}</Text>
             <Text style={styles.templateItemContent} numberOfLines={3}>{template.content}</Text>
             <View style={styles.templateItemFooter}>
               <Text style={styles.templateInsertText}>点击复制到剪贴板</Text>
@@ -1467,6 +1604,21 @@ const styles = StyleSheet.create({
     color: COLORS.textSecondary,
     marginTop: 2,
   },
+  addTemplateBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: COLORS.primary,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 12,
+    marginBottom: 16,
+  },
+  addTemplateBtnText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '600',
+  },
   categoryScroll: {
     maxHeight: 44,
     marginBottom: 10,
@@ -1763,6 +1915,20 @@ const styles = StyleSheet.create({
     color: COLORS.muted,
     marginTop: 8,
     lineHeight: 18,
+  },
+  templateItemActions: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  templateActionBtn: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 4,
+    backgroundColor: COLORS.background,
+  },
+  templateActionText: {
+    fontSize: 12,
+    color: COLORS.muted,
   },
   feedbackSuccess: {
     flexDirection: 'row',
