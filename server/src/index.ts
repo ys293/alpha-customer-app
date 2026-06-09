@@ -3,6 +3,7 @@ import cors from "cors";
 import multer from "multer";
 import { LLMClient, Config } from "coze-coding-dev-sdk";
 import { S3Storage } from "coze-coding-dev-sdk";
+import { createClient } from "@supabase/supabase-js";
 
 const app = express();
 const port = process.env.PORT || 9091;
@@ -29,6 +30,13 @@ const storage = new S3Storage({
 
 const llmConfig = new Config();
 const llmClient = new LLMClient(llmConfig);
+
+// 初始化Supabase客户端
+const supabaseUrl = process.env.COZE_SUPABASE_URL || '';
+const supabaseServiceKey = process.env.COZE_SUPABASE_SERVICE_ROLE_KEY || '';
+const supabase = supabaseUrl && supabaseServiceKey 
+  ? createClient(supabaseUrl, supabaseServiceKey) 
+  : null;
 
 // 健康检查
 app.get('/api/v1/health', (req, res) => {
@@ -382,6 +390,92 @@ app.post('/api/v1/transcribe', upload.single('file'), async (req, res) => {
   } catch (error) {
     console.error('语音识别失败:', error);
     res.status(500).json({ error: '语音识别失败' });
+  }
+});
+
+// 提交学习反馈
+app.post('/api/v1/feedback', async (req, res) => {
+  try {
+    const { sceneType, originalText, polishedText, finalText, style, hasImages, hasAudio } = req.body;
+
+    if (!finalText || !finalText.trim()) {
+      return res.status(400).json({ error: '请输入最终版本内容' });
+    }
+
+    // 如果有Supabase且润色结果不同，则记录反馈
+    if (supabase && polishedText && polishedText !== finalText) {
+      // 检查是否存在相似反馈（同一场景+相似原文）
+      const { data: existing } = await supabase
+        .from('polish_feedback')
+        .select('id, frequency_count')
+        .eq('scene_type', sceneType || 'unknown')
+        .eq('original_text', originalText || '')
+        .eq('polished_text', polishedText)
+        .single();
+
+      if (existing) {
+        // 更新频率计数
+        await supabase
+          .from('polish_feedback')
+          .update({ 
+            final_text: finalText,
+            frequency_count: existing.frequency_count + 1,
+            created_at: new Date().toISOString()
+          })
+          .eq('id', existing.id);
+      } else {
+        // 新增反馈记录
+        await supabase
+          .from('polish_feedback')
+          .insert({
+            scene_type: sceneType || 'unknown',
+            original_text: originalText || '',
+            polished_text: polishedText,
+            final_text: finalText,
+            style: style || 'friendly',
+            has_images: hasImages || false,
+            has_audio: hasAudio || false,
+            frequency_count: 1
+          });
+      }
+    }
+
+    res.json({ success: true, message: '学习成功，感谢您的反馈！' });
+
+  } catch (error) {
+    console.error('反馈提交失败:', error);
+    res.status(500).json({ error: '反馈提交失败' });
+  }
+});
+
+// 获取话术库建议（高频场景）
+app.get('/api/v1/suggestions', async (req, res) => {
+  try {
+    if (!supabase) {
+      return res.json({ suggestions: [], message: '数据库未配置' });
+    }
+
+    // 查询高频场景（出现3次以上）
+    const { data: frequent, error } = await supabase
+      .from('polish_feedback')
+      .select('scene_type, final_text, frequency_count')
+      .gte('frequency_count', 3)
+      .order('frequency_count', { ascending: false })
+      .limit(10);
+
+    if (error) throw error;
+
+    const suggestions = (frequent || []).map(item => ({
+      scene: item.scene_type,
+      text: item.final_text,
+      count: item.frequency_count
+    }));
+
+    res.json({ suggestions });
+
+  } catch (error) {
+    console.error('获取建议失败:', error);
+    res.status(500).json({ error: '获取建议失败' });
   }
 });
 

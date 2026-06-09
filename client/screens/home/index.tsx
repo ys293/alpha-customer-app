@@ -114,6 +114,8 @@ const COLORS = {
   textPrimary: '#1A1D26',
   textSecondary: '#6B7280',
   textPlaceholder: '#9CA3AF',
+	  text: '#6B7280',
+	  muted: '#9CA3AF',
   success: '#10B981',
   border: '#E5E7EB',
 };
@@ -136,6 +138,12 @@ export default function HomeScreen() {
   const [isRecording, setIsRecording] = useState(false);
   const [recordingDuration, setRecordingDuration] = useState(0);
   const [transcribedText, setTranscribedText] = useState('');
+
+  // 学习反馈状态
+  const [showFeedbackModal, setShowFeedbackModal] = useState(false);
+  const [feedbackText, setFeedbackText] = useState('');
+  const [sceneType, setSceneType] = useState('');
+  const [isSubmittingFeedback, setIsSubmittingFeedback] = useState(false);
 
   const sseRef = useRef<RNSSE | null>(null);
   const resultTextRef = useRef('');
@@ -749,6 +757,10 @@ export default function HomeScreen() {
                   <Ionicons name="share-outline" size={18} color={COLORS.primary} />
                   <Text style={styles.resultActionText}>分享</Text>
                 </TouchableOpacity>
+                <TouchableOpacity style={styles.resultActionBtn} onPress={handleOpenFeedback}>
+                  <Ionicons name="school-outline" size={18} color="#10B981" />
+                  <Text style={[styles.resultActionText, { color: '#10B981' }]}>学习</Text>
+                </TouchableOpacity>
               </View>
             )}
           </View>
@@ -840,6 +852,48 @@ export default function HomeScreen() {
       )}
     </View>
   );
+
+  // ========== 学习反馈弹窗 ==========
+  const handleOpenFeedback = () => {
+    setFeedbackText(resultText);
+    setShowFeedbackModal(true);
+  };
+
+  const handleSubmitFeedback = async () => {
+    if (!feedbackText.trim()) {
+      Alert.alert('提示', '请输入修改后的最终版本');
+      return;
+    }
+
+    setIsSubmittingFeedback(true);
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/v1/feedback`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sceneType: sceneType,
+          originalText: inputText,
+          polishedText: resultText,
+          finalText: feedbackText,
+          style: selectedStyle,
+          hasImages: imageUris.length > 0,
+          hasAudio: !!transcribedText,
+        }),
+      });
+
+      if (response.ok) {
+        setShowFeedbackModal(false);
+        Alert.alert('学习成功', '感谢您的反馈，这会帮助AI不断优化！');
+      } else {
+        Alert.alert('提交失败', '请稍后重试');
+      }
+    } catch (error) {
+      console.error('反馈提交失败:', error);
+      Alert.alert('提交失败', '请检查网络连接');
+    } finally {
+      setIsSubmittingFeedback(false);
+    }
+  };
 
   // ========== 渲染话术库页面 ==========
   const renderTemplatesTab = () => (
@@ -1000,6 +1054,44 @@ export default function HomeScreen() {
             </TouchableOpacity>
           </View>
         </TouchableOpacity>
+      </Modal>
+
+      {/* 学习反馈弹窗 */}
+      <Modal visible={showFeedbackModal} transparent animationType="slide" onRequestClose={() => setShowFeedbackModal(false)}>
+        <KeyboardAvoidingView style={styles.feedbackOverlay} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+          <View style={styles.feedbackModal}>
+            <View style={styles.feedbackHeader}>
+              <Text style={styles.feedbackTitle}>学习反馈</Text>
+              <TouchableOpacity onPress={() => setShowFeedbackModal(false)}>
+                <Ionicons name="close" size={24} color={COLORS.textSecondary} />
+              </TouchableOpacity>
+            </View>
+            <Text style={styles.feedbackLabel}>请输入您修改后的最终版本，AI将学习您的习惯</Text>
+            <TextInput
+              style={styles.feedbackInput}
+              value={feedbackText}
+              onChangeText={setFeedbackText}
+              placeholder="在此输入最终版本..."
+              placeholderTextColor={COLORS.textPlaceholder}
+              multiline
+              textAlignVertical="top"
+            />
+            <View style={styles.feedbackFooter}>
+              <TouchableOpacity style={styles.feedbackCancel} onPress={() => setShowFeedbackModal(false)}>
+                <Text style={styles.feedbackCancelText}>取消</Text>
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={[styles.feedbackSubmit, isSubmittingFeedback && styles.feedbackSubmitDisabled]} 
+                onPress={handleSubmitFeedback}
+                disabled={isSubmittingFeedback}
+              >
+                <Text style={styles.feedbackSubmitText}>
+                  {isSubmittingFeedback ? '提交中...' : '提交学习'}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </KeyboardAvoidingView>
       </Modal>
     </View>
   );
@@ -1585,5 +1677,105 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 50,
     right: 20,
+  },
+
+  // 学习反馈弹窗
+  feedbackOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  feedbackModal: {
+    width: '90%',
+    maxHeight: '70%',
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    overflow: 'hidden',
+  },
+  feedbackHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+  },
+  feedbackTitle: {
+    fontSize: 17,
+    fontWeight: '600',
+    color: COLORS.text,
+  },
+  feedbackClose: {
+    padding: 4,
+  },
+  feedbackBody: {
+    padding: 16,
+  },
+  feedbackLabel: {
+    fontSize: 14,
+    color: COLORS.muted,
+    marginBottom: 8,
+  },
+  feedbackInput: {
+    backgroundColor: '#f5f5f5',
+    borderRadius: 12,
+    padding: 14,
+    fontSize: 15,
+    color: COLORS.text,
+    minHeight: 120,
+    textAlignVertical: 'top',
+  },
+  feedbackFooter: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: 12,
+    padding: 16,
+    borderTopWidth: 1,
+    borderTopColor: '#eee',
+  },
+  feedbackCancel: {
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    backgroundColor: '#f0f0f0',
+  },
+  feedbackCancelText: {
+    color: COLORS.muted,
+    fontSize: 15,
+  },
+  feedbackSubmit: {
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    backgroundColor: COLORS.primary,
+  },
+	  feedbackSubmitDisabled: {
+	    opacity: 0.5,
+	  },
+  feedbackSubmitText: {
+    color: '#fff',
+    fontSize: 15,
+    fontWeight: '500',
+  },
+  feedbackTip: {
+    fontSize: 12,
+    color: COLORS.muted,
+    marginTop: 8,
+    lineHeight: 18,
+  },
+  feedbackSuccess: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 16,
+    padding: 12,
+    backgroundColor: '#f0fdf4',
+    borderRadius: 8,
+  },
+  feedbackSuccessText: {
+    color: '#16a34a',
+    fontSize: 14,
+    marginLeft: 6,
   },
 });
