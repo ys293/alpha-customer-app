@@ -119,6 +119,7 @@ const COLORS = {
   textPlaceholder: '#9CA3AF',
 	  text: '#6B7280',
 	  muted: '#9CA3AF',
+	  card: '#FFFFFF',
   success: '#10B981',
   warning: '#F59E0B',
   danger: '#EF4444',
@@ -1071,40 +1072,88 @@ export default function HomeScreen() {
   );
 
   // ========== 渲染知识库页面 ==========
+  // ========== 知识库数据 ==========
+  const KNOWLEDGE_ITEMS = [
+    {
+      id: 'preparation',
+      icon: 'grid-outline',
+      title: '备牙标准与沟通指导',
+      subtitle: '依据中华口腔医学会团体标准',
+      summary: '全瓷冠、贴面等不同修复类型的预备量标准，以及沟通话术示例',
+    },
+    {
+      id: 'color',
+      icon: 'color-palette-outline',
+      title: '比色标准与沟通指导',
+      subtitle: '依据《美学修复颜色匹配专家共识》',
+      summary: '比色时机、环境、步骤的规范要求，以及色差问题的沟通话术',
+    },
+    {
+      id: 'impression',
+      icon: 'layers-outline',
+      title: '印模制取标准与沟通指导',
+      subtitle: '依据《口内数字化印模专家共识》',
+      summary: '印模/模型、口扫数据、咬合记录的最低标准要求',
+    },
+    {
+      id: 'implant',
+      icon: 'construct-outline',
+      title: '种植修复配件就位指导',
+      subtitle: '依据《口腔种植技术指南（2025版）》',
+      summary: '扫描杆/转移杆/基台就位检查、螺丝扭矩标准、排查流程',
+    },
+    {
+      id: 'return',
+      icon: 'refresh-outline',
+      title: '返工件对接处理规范',
+      subtitle: '内部客服培训标准流程',
+      summary: '返工流程、信息收集清单、常见返工沟通话术',
+    },
+  ];
+
   const renderKnowledgeTab = () => (
-    <View style={styles.tabContent}>
+    <ScrollView style={styles.tabContent} showsVerticalScrollIndicator={false}>
       <View style={styles.knowledgeHeader}>
         <Ionicons name="book-outline" size={48} color={COLORS.primary} />
-        <Text style={styles.knowledgeTitle}>口腔义齿知识库</Text>
-        <Text style={styles.knowledgeSubtitle}>专业口腔修复知识指南</Text>
+        <Text style={styles.knowledgeTitle}>义齿加工知识库</Text>
+        <Text style={styles.knowledgeSubtitle}>内部学习指导 · 行业标准 + 实操话术</Text>
       </View>
+      
       <View style={styles.knowledgeList}>
-        <TouchableOpacity style={styles.knowledgeItem}>
-          <Ionicons name="grid-outline" size={24} color={COLORS.primary} />
-          <Text style={styles.knowledgeItemText}>备牙标准规范</Text>
-          <Ionicons name="chevron-forward-outline" size={20} color={COLORS.textPlaceholder} />
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.knowledgeItem}>
-          <Ionicons name="color-palette-outline" size={24} color={COLORS.primary} />
-          <Text style={styles.knowledgeItemText}>比色技术指南</Text>
-          <Ionicons name="chevron-forward-outline" size={20} color={COLORS.textPlaceholder} />
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.knowledgeItem}>
-          <Ionicons name="layers-outline" size={24} color={COLORS.primary} />
-          <Text style={styles.knowledgeItemText}>印模制取规范</Text>
-          <Ionicons name="chevron-forward-outline" size={20} color={COLORS.textPlaceholder} />
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.knowledgeItem}>
-          <Ionicons name="construct-outline" size={24} color={COLORS.primary} />
-          <Text style={styles.knowledgeItemText}>常见问题解答</Text>
-          <Ionicons name="chevron-forward-outline" size={20} color={COLORS.textPlaceholder} />
-        </TouchableOpacity>
+        {KNOWLEDGE_ITEMS.map((item) => (
+          <TouchableOpacity key={item.id} style={styles.knowledgeItem}>
+            <View style={styles.knowledgeItemLeft}>
+              <View style={styles.knowledgeIconContainer}>
+                <Ionicons name={item.icon as any} size={24} color={COLORS.primary} />
+              </View>
+              <View style={styles.knowledgeItemContent}>
+                <Text style={styles.knowledgeItemTitle}>{item.title}</Text>
+                <Text style={styles.knowledgeItemSubtitle}>{item.subtitle}</Text>
+              </View>
+            </View>
+            <Ionicons name="chevron-forward-outline" size={20} color={COLORS.textPlaceholder} />
+          </TouchableOpacity>
+        ))}
       </View>
+      
+      <View style={styles.knowledgeCard}>
+        <View style={styles.knowledgeCardHeader}>
+          <Ionicons name="alert-circle-outline" size={20} color={COLORS.primary} />
+          <Text style={styles.knowledgeCardTitle}>客服通用对接总原则</Text>
+        </View>
+        <View style={styles.knowledgeCardList}>
+          <Text style={styles.knowledgeCardItem}>1. 先安抚医生情绪，再给解决方案</Text>
+          <Text style={styles.knowledgeCardItem}>2. 低于最低标准必须明确告知风险</Text>
+          <Text style={styles.knowledgeCardItem}>3. 关键信息留文字记录确认</Text>
+          <Text style={styles.knowledgeCardItem}>4. 不确定的问题先问技师再回复</Text>
+        </View>
+      </View>
+      
       <View style={styles.knowledgeTip}>
-        <Ionicons name="information-circle-outline" size={20} color={COLORS.textSecondary} />
-        <Text style={styles.knowledgeTipText}>更多专业知识持续更新中...</Text>
+        <Ionicons name="school-outline" size={20} color={COLORS.textSecondary} />
+        <Text style={styles.knowledgeTipText}>内容结合行业权威标准与临床实际情况整理</Text>
       </View>
-    </View>
+    </ScrollView>
   );
 
   // ========== 渲染我的页面 ==========
@@ -1713,10 +1762,53 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   knowledgeList: {
-    gap: 1,
+    gap: 12,
+    paddingHorizontal: 16,
+  },
+  knowledgeSection: {
+    marginBottom: 20,
+  },
+  knowledgeSectionTitle: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: COLORS.textPrimary,
+    marginBottom: 10,
+  },
+  knowledgeCard: {
     backgroundColor: COLORS.surface,
-    borderRadius: 14,
-    overflow: 'hidden',
+    borderRadius: 12,
+    padding: 14,
+    marginBottom: 10,
+  },
+  knowledgeCardTitle: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: COLORS.textPrimary,
+    marginBottom: 6,
+  },
+  knowledgeCardHeader: {
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
+    marginBottom: 10,
+  },
+  knowledgeCardList: {
+    gap: 6,
+  },
+  knowledgeCardItem: {
+    fontSize: 13,
+    color: COLORS.textSecondary,
+    lineHeight: 20,
+  },
+  knowledgeCardLabel: {
+    fontSize: 12,
+    color: COLORS.textSecondary,
+    marginBottom: 4,
+    marginTop: 10,
+  },
+  knowledgeCardText: {
+    fontSize: 13,
+    color: COLORS.textPrimary,
+    lineHeight: 20,
   },
   knowledgeItem: {
     flexDirection: 'row',
@@ -1729,6 +1821,117 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 15,
     color: COLORS.textPrimary,
+  },
+  // 知识库详情样式
+  knowledgeDetailHeader: {
+    padding: 16,
+    backgroundColor: COLORS.surface,
+    borderRadius: 14,
+    marginBottom: 12,
+  },
+  knowledgeDetailTitle: {
+    fontSize: 17,
+    fontWeight: '700',
+    color: COLORS.textPrimary,
+    marginBottom: 6,
+  },
+  knowledgeDetailSource: {
+    fontSize: 12,
+    color: COLORS.muted,
+  },
+  knowledgeDetailSection: {
+    backgroundColor: COLORS.surface,
+    borderRadius: 14,
+    padding: 16,
+    marginBottom: 12,
+  },
+  knowledgeDetailSectionTitle: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: COLORS.textPrimary,
+    marginBottom: 10,
+  },
+  knowledgeDetailTable: {
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    borderRadius: 8,
+    overflow: 'hidden',
+  },
+  knowledgeDetailTableHeader: {
+    flexDirection: 'row',
+    backgroundColor: COLORS.primary,
+    paddingVertical: 8,
+    paddingHorizontal: 8,
+  },
+  knowledgeDetailTableHeaderText: {
+    flex: 1,
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#FFFFFF',
+    textAlign: 'center',
+  },
+  knowledgeDetailTableRow: {
+    flexDirection: 'row',
+    paddingVertical: 8,
+    paddingHorizontal: 8,
+    borderTopWidth: 1,
+    borderTopColor: COLORS.border,
+  },
+  knowledgeDetailTableCell: {
+    flex: 1,
+    fontSize: 11,
+    color: COLORS.textSecondary,
+    textAlign: 'center',
+  },
+  knowledgeDetailText: {
+    fontSize: 13,
+    color: COLORS.textSecondary,
+    lineHeight: 20,
+    marginBottom: 8,
+  },
+  knowledgeDetailTextBold: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: COLORS.textPrimary,
+    lineHeight: 20,
+  },
+  knowledgeDetailTip: {
+    backgroundColor: '#FFF7ED',
+    borderLeftWidth: 3,
+    borderLeftColor: COLORS.primary,
+    padding: 12,
+    borderRadius: 8,
+    marginTop: 12,
+  },
+  knowledgeDetailTipTitle: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: COLORS.primary,
+    marginBottom: 4,
+  },
+  knowledgeDetailTipText: {
+    fontSize: 13,
+    color: COLORS.textSecondary,
+    lineHeight: 20,
+  },
+  knowledgeDetailBullet: {
+    flexDirection: 'row',
+    marginBottom: 6,
+    paddingLeft: 4,
+  },
+  knowledgeDetailBulletDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: COLORS.primary,
+    marginTop: 6,
+    marginRight: 8,
+  },
+  knowledgeDetailBulletText: {
+    flex: 1,
+    fontSize: 13,
+    color: COLORS.textSecondary,
+    lineHeight: 20,
   },
   knowledgeTip: {
     flexDirection: 'row',
@@ -1943,5 +2146,41 @@ const styles = StyleSheet.create({
     color: '#16a34a',
     fontSize: 14,
     marginLeft: 6,
+  },
+  knowledgeItem: {
+    backgroundColor: COLORS.card,
+    borderRadius: 12,
+    padding: 14,
+    marginBottom: 12,
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
+  },
+  knowledgeItemLeft: {
+    marginRight: 12,
+  },
+  knowledgeIconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 10,
+    backgroundColor: COLORS.primaryLight,
+    justifyContent: "center" as const,
+    alignItems: "center" as const,
+  },
+  knowledgeItemContent: {
+    flex: 1,
+  },
+  knowledgeItemTitle: {
+    fontSize: 15,
+    fontWeight: "600" as const,
+    color: COLORS.text,
+    marginBottom: 2,
+  },
+  knowledgeItemSubtitle: {
+    fontSize: 12,
+    color: COLORS.muted,
+  },
+  knowledgeItemArrow: {
+    fontSize: 16,
+    color: COLORS.muted,
   },
 });
