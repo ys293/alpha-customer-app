@@ -53,9 +53,31 @@ interface TemplateItem {
   content: string;
 }
 
-// 口腔义齿行业快捷短语库
+// 口腔义齿行业快捷短语库（常用分类优先）
 const TEMPLATE_LIBRARY: TemplateItem[] = [
-  // 一、资料/物料缺失，无法排产
+  // 六、工期延后告知（高频）
+  { id: 't8', category: '延期告知', title: '工艺/排单延期', content: 'XX 医生您好，跟您致歉，因【工艺复杂/原料调配/批量排单】原因，XXX 患者订单预计延迟至 XX 时间交付，给您带来不便非常抱歉，我们会加急赶工。' },
+  { id: 't9', category: '延期告知', title: '质检不达标返工', content: 'XX 医生您好，非常抱歉。XXX 患者订单在【工序质检/最终终检】时发现细节问题，未达到出货标准，现已退回重新修整制作，今日无法交付，预计 XX 时间完成。我们会严格把控品质，还请您谅解。' },
+  { id: 't10', category: '延期告知', title: '沟通耗时延期', content: 'XX 医生您好，非常抱歉。XXX 患者订单前期与临床制作沟通对接，占用了部分工时，导致订单进度延后，今日暂无法出货，预计 XX 时间交付，望您理解。' },
+  { id: 't11', category: '延期告知', title: '工艺复杂延期', content: 'XX 医生您好，实在抱歉。XXX 患者订单因【加工要求特殊/加工项目复杂/多生产线制作】，制作耗时超出预期，今日无法交付，预计 XX 时间完成，还请您谅解。' },
+  { id: 't12', category: '延期告知', title: '美学要求延期', content: 'XX 医生您好，非常抱歉。XXX 患者此订单【个性化制作要求较高/形态颜色美观要求高】技师需要反复打磨细节、多次微调，因此进度有所延后，今日无法交付，预计 XX 时间我们会完成出货。' },
+  { id: 't13', category: '延期告知', title: '全厂质量复检', content: 'XX 医生您好，实在抱歉。车间近期对整批产品开展全面质量复检，该订单进度随之顺延，今日无法交付，预计 XX 时间完成，敬请包涵。' },
+
+  // 七、模型/基牙异常（高频）
+  { id: 't14', category: '模型异常', title: '咬合空间不足', content: 'XX 医生您好，制作 XXX 患者义齿时，发现模型基牙咬合空间不足，达不到对应材料的最小厚度要求，无法直接加工。想跟您确认：是在模型上修整基牙/对颌牙并做好标记，还是麻烦您重新备牙取模？' },
+  { id: 't15', category: '模型异常', title: '邻牙存在倒凹', content: 'XX 医生您好，在制作 XXX 患者义齿时，发现模型存在邻牙倒凹，直接制作将会出现无法就位或邻接无接触等问题，无法直接加工制作。想跟您确认：是在模型上修整邻牙并作好标记，还是麻烦您重新备牙取模呢？' },
+  { id: 't16', category: '模型异常', title: '少量倒凹处理', content: 'XX 医生您好，打扰您。XXX 患者的模型基牙存在少量倒凹，直接制作会引发义齿边缘不密合、飘空等情况，影响使用效果，所以不建议直接加工。若直接加工，易造成义齿边缘不密合、出现间隙飘空，因此不建议直接制作。想和您沟通处理方式：1.我们可修除模型倒凹并做标记，供您口内参照预备；2.也可直接填补倒凹制作；3.或是辛苦您重新备牙取模，您看哪种更合适？' },
+  { id: 't17', category: '模型异常', title: '桥体倒凹处理', content: 'XX 医生您好，打扰您了。XXX 患者的模型桥体存在倒凹，暂无共同就位道，倒凹集中在（）区域。直接制作容易出现义齿就位不畅、边缘不密合、飘空等问题，故而不建议直接做至。想和您沟通下，是我们修整模型去除倒凹并做好标记再加工，还是辛苦您重新备牙取模呢？' },
+  { id: 't18', category: '模型异常', title: '邻面形态异常', content: 'XX 医生您好，打扰您。XXX 患者模型邻面形态异常（见附图），系印模/口扫误差造成。直接加工易引发就位不畅、邻面接触异常，特此提醒。请您先确认：口内情况是否与模型一致？如一致，无其他要求我们按照现模型制作。若不一致，可选方案：1.我方刮除模型异常区域并标记，后续正常制作；2.重新约患者检查、再次取模。您看哪种更合适？' },
+
+  // 八、咬合记录异常/缺失（高频）
+  { id: 't19', category: '咬合记录', title: '缺咬合记录', content: 'XX 医生您好，打扰您了。制作 XXX 患者义齿时，发现模型咬合存在异常，随件也未附带咬合记录，目前无法正常上架制作。为保证咬合精度与成品效果，麻烦您抽空安排患者重新采集咬合记录。辛苦您了，收到消息还请抽空告知我一下，谢谢！' },
+  { id: 't20', category: '咬合记录', title: '咬合精度不足', content: 'XX 医生您好，打扰您了。制作 XXX 患者义齿时，发现模型咬合存在异常，结合随附的咬合记录试配后，咬合状态仍不够精准，暂时无法正常上架制作。附图/视频是依据现有咬合记录模拟的效果，麻烦您核对下和患者口内实际情况是否存在偏差。若状态一致，我们就按当前咬合继续制作；若偏差较大，为保障成品使用效果，还请您安排患者重新采集咬合记录。辛苦您了，收到消息还望抽空回复，谢谢！' },
+
+  // 九、比色/照片问题（高频）
+  { id: 't21', category: '比色问题', title: '比色无法确定', content: 'XX 医生您好，打扰您。XXX 患者的比色照片，受拍摄光线、比色板摆放角度影响，且所选色号和邻牙色差较明显，暂时无法确定制作颜色。如果您还记得匹配邻牙的准确色板，麻烦告知我们，我们将按您的要求制作；若记忆不清，为保证最终色泽效果，还请您安排患者重新比色。辛苦您了，收到消息还请抽空回复，谢谢！' },
+
+  // 一、资料/物料缺失
   { id: 't1', category: '物料缺失', title: '缺种植品牌/材料', content: 'XX 医生您好，XXX 患者此订单缺少【种植品牌系统/加工产品/加工材料/制作颜色/比色照/】，暂时无法安排生产。麻烦您补充相关资料信息，收到后我们第一时间排单，辛苦啦！' },
   { id: 't2', category: '物料缺失', title: '缺转移杆/咬合记录', content: 'XX 医生您好，XXX 患者此订单缺少【种植转移杆/咬合记录/】，暂时无法安排生产。麻烦您这边安排一下，收到后我们第一时间排单，辛苦啦！' },
 
@@ -71,28 +93,6 @@ const TEMPLATE_LIBRARY: TemplateItem[] = [
 
   // 五、货品已发货/配送通知
   { id: 't7', category: '发货通知', title: '发货/同城配送', content: 'XX 医生您好，您的货品已发出，快递单号：XXX，物流可自行查询；同城配送预计 XX 时间送达门诊，请注意查收。' },
-
-  // 六、工期延后告知
-  { id: 't8', category: '延期告知', title: '工艺/排单延期', content: 'XX 医生您好，跟您致歉，因【工艺复杂/原料调配/批量排单】原因，XXX 患者订单预计延迟至 XX 时间交付，给您带来不便非常抱歉，我们会加急赶工。' },
-  { id: 't9', category: '延期告知', title: '质检不达标返工', content: 'XX 医生您好，非常抱歉。XXX 患者订单在【工序质检/最终终检】时发现细节问题，未达到出货标准，现已退回重新修整制作，今日无法交付，预计 XX 时间完成。我们会严格把控品质，还请您谅解。' },
-  { id: 't10', category: '延期告知', title: '沟通耗时延期', content: 'XX 医生您好，非常抱歉。XXX 患者订单前期与临床制作沟通对接，占用了部分工时，导致订单进度延后，今日暂无法出货，预计 XX 时间交付，望您理解。' },
-  { id: 't11', category: '延期告知', title: '工艺复杂延期', content: 'XX 医生您好，实在抱歉。XXX 患者订单因【加工要求特殊/加工项目复杂/多生产线制作】，制作耗时超出预期，今日无法交付，预计 XX 时间完成，还请您谅解。' },
-  { id: 't12', category: '延期告知', title: '美学要求延期', content: 'XX 医生您好，非常抱歉。XXX 患者此订单【个性化制作要求较高/形态颜色美观要求高】技师需要反复打磨细节、多次微调，因此进度有所延后，今日无法交付，预计 XX 时间我们会完成出货。' },
-  { id: 't13', category: '延期告知', title: '全厂质量复检', content: 'XX 医生您好，实在抱歉。车间近期对整批产品开展全面质量复检，该订单进度随之顺延，今日无法交付，预计 XX 时间完成，敬请包涵。' },
-
-  // 七、模型/基牙异常
-  { id: 't14', category: '模型异常', title: '咬合空间不足', content: 'XX 医生您好，制作 XXX 患者义齿时，发现模型基牙咬合空间不足，达不到对应材料的最小厚度要求，无法直接加工。想跟您确认：是在模型上修整基牙/对颌牙并做好标记，还是麻烦您重新备牙取模？' },
-  { id: 't15', category: '模型异常', title: '邻牙存在倒凹', content: 'XX 医生您好，在制作 XXX 患者义齿时，发现模型存在邻牙倒凹，直接制作将会出现无法就位或邻接无接触等问题，无法直接加工制作。想跟您确认：是在模型上修整邻牙并作好标记，还是麻烦您重新备牙取模呢？' },
-  { id: 't16', category: '模型异常', title: '少量倒凹处理', content: 'XX 医生您好，打扰您。XXX 患者的模型基牙存在少量倒凹，直接制作会引发义齿边缘不密合、飘空等情况，影响使用效果，所以不建议直接加工。若直接加工，易造成义齿边缘不密合、出现间隙飘空，因此不建议直接制作。想和您沟通处理方式：1.我们可修除模型倒凹并做标记，供您口内参照预备；2.也可直接填补倒凹制作；3.或是辛苦您重新备牙取模，您看哪种更合适？' },
-  { id: 't17', category: '模型异常', title: '桥体倒凹处理', content: 'XX 医生您好，打扰您了。XXX 患者的模型桥体存在倒凹，暂无共同就位道，倒凹集中在（）区域。直接制作容易出现义齿就位不畅、边缘不密合、飘空等问题，故而不建议直接做至。想和您沟通下，是我们修整模型去除倒凹并做好标记再加工，还是辛苦您重新备牙取模呢？' },
-  { id: 't18', category: '模型异常', title: '邻面形态异常', content: 'XX 医生您好，打扰您。XXX 患者模型邻面形态异常（见附图），系印模/口扫误差造成。直接加工易引发就位不畅、邻面接触异常，特此提醒。请您先确认：口内情况是否与模型一致？如一致，无其他要求我们按照现模型制作。若不一致，可选方案：1.我方刮除模型异常区域并标记，后续正常制作；2.重新约患者检查、再次取模。您看哪种更合适？' },
-
-  // 八、咬合记录异常/缺失
-  { id: 't19', category: '咬合记录', title: '缺咬合记录', content: 'XX 医生您好，打扰您了。制作 XXX 患者义齿时，发现模型咬合存在异常，随件也未附带咬合记录，目前无法正常上架制作。为保证咬合精度与成品效果，麻烦您抽空安排患者重新采集咬合记录。辛苦您了，收到消息还请抽空告知我一下，谢谢！' },
-  { id: 't20', category: '咬合记录', title: '咬合精度不足', content: 'XX 医生您好，打扰您了。制作 XXX 患者义齿时，发现模型咬合存在异常，结合随附的咬合记录试配后，咬合状态仍不够精准，暂时无法正常上架制作。附图/视频是依据现有咬合记录模拟的效果，麻烦您核对下和患者口内实际情况是否存在偏差。若状态一致，我们就按当前咬合继续制作；若偏差较大，为保障成品使用效果，还请您安排患者重新采集咬合记录。辛苦您了，收到消息还望抽空回复，谢谢！' },
-
-  // 九、比色/照片问题
-  { id: 't21', category: '比色问题', title: '比色无法确定', content: 'XX 医生您好，打扰您。XXX 患者的比色照片，受拍摄光线、比色板摆放角度影响，且所选色号和邻牙色差较明显，暂时无法确定制作颜色。如果您还记得匹配邻牙的准确色板，麻烦告知我们，我们将按您的要求制作；若记忆不清，为保证最终色泽效果，还请您安排患者重新比色。辛苦您了，收到消息还请抽空回复，谢谢！' },
 ];
 
 // 底部导航配置
@@ -1099,38 +1099,38 @@ const styles = StyleSheet.create({
 
   // 话术库
   templateHeader: {
-    marginBottom: 12,
+    marginBottom: 10,
   },
   templateTitle: {
-    fontSize: 17,
+    fontSize: 18,
     fontWeight: '700',
     color: COLORS.textPrimary,
   },
   templateSubtitle: {
-    fontSize: 13,
+    fontSize: 12,
     color: COLORS.textSecondary,
     marginTop: 2,
   },
   categoryScroll: {
-    maxHeight: 50,
-    marginBottom: 12,
+    maxHeight: 44,
+    marginBottom: 10,
   },
   categoryRow: {
     flexDirection: 'row',
-    gap: 8,
+    gap: 6,
     paddingRight: 16,
   },
   categoryItem: {
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 16,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 14,
     backgroundColor: COLORS.surface,
   },
   categoryItemActive: {
     backgroundColor: COLORS.primary,
   },
   categoryText: {
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '500',
     color: COLORS.textSecondary,
   },
@@ -1142,48 +1142,48 @@ const styles = StyleSheet.create({
   },
   templateItem: {
     backgroundColor: COLORS.surface,
-    borderRadius: 14,
-    padding: 14,
-    marginBottom: 10,
+    borderRadius: 10,
+    padding: 12,
+    marginBottom: 8,
   },
   templateItemHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    marginBottom: 8,
+    marginBottom: 6,
   },
   templateBadge: {
     backgroundColor: COLORS.primaryLight,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 6,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
   },
   templateBadgeText: {
-    fontSize: 11,
+    fontSize: 10,
     color: COLORS.primary,
     fontWeight: '600',
   },
   templateItemTitle: {
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: '600',
     color: COLORS.textPrimary,
   },
   templateItemContent: {
-    fontSize: 13,
+    fontSize: 12,
     color: COLORS.textSecondary,
-    lineHeight: 20,
+    lineHeight: 18,
   },
   templateItemFooter: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'flex-end',
     alignItems: 'center',
-    marginTop: 10,
-    paddingTop: 10,
+    marginTop: 6,
+    paddingTop: 6,
     borderTopWidth: 1,
     borderTopColor: COLORS.border,
   },
   templateInsertText: {
-    fontSize: 12,
+    fontSize: 11,
     color: COLORS.primary,
     fontWeight: '500',
   },
